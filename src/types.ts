@@ -1,0 +1,55 @@
+export interface CorporationRecord {
+  sequenceNumber: number | null;
+  corporateNumber: string;
+  process: string | null;
+  correct: boolean | null;
+  updateDate: string | null;
+  changeDate: string | null;
+  name: string;
+  kind: string | null;
+  prefectureName: string | null;
+  cityName: string | null;
+  streetNumber: string | null;
+  prefectureCode: string | null;
+  cityCode: string | null;
+  postCode: string | null;
+  addressOutside: string | null;
+  closeDate: string | null;
+  closeCause: string | null;
+  successorCorporateNumber: string | null;
+  changeCause: string | null;
+  assignmentDate: string | null;
+  latest: boolean | null;
+  enName: string | null;
+  enPrefectureName: string | null;
+  enCityName: string | null;
+  enAddressOutside: string | null;
+  furigana: string | null;
+  hidden: boolean | null;
+}
+
+export interface CorporationResponseMeta {
+  lastUpdateDate: string | null;
+  count: number;
+  divideNumber: number | null;
+  divideSize: number | null;
+}
+
+export interface CorporationListResponse {
+  metadata: CorporationResponseMeta;
+  corporations: CorporationRecord[];
+}
+
+export interface GetCorporationByNumberParams {
+  corporateNumber: string;
+  history?: boolean;
+}
+
+export interface SearchCorporationsByNameParams {
+  name: string;
+}
+
+export interface GetCorporationUpdatesParams {
+  from: string;
+  to: string;
+}
