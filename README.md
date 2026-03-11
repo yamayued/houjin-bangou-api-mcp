@@ -115,6 +115,55 @@ Example command-based configuration for MCP clients that can spawn local servers
 If your client supports `npx`, you can also point it at the published package once releases are
 available.
 
+### Claude Desktop (macOS/Linux)
+
+Claude Desktop looks for its config at `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS
+or `~/.config/Claude/claude_desktop_config.json` on Linux.
+
+Replace the absolute path below with the actual path to your cloned repository:
+
+```json
+{
+  "mcpServers": {
+    "houjin-bangou-api": {
+      "command": "node",
+      "args": [
+        "/Users/YOUR_USERNAME/dev/houjin-bangou-api-mcp/dist/server.js"
+      ],
+      "env": {
+        "HOUJIN_BANGOU_API_APPLICATION_ID": "YOUR_APPLICATION_ID"
+      }
+    }
+  }
+}
+```
+
+### Codex / Continue.dev
+
+Continue.dev uses a similar MCP server configuration. Add this to your Continue config file
+(typically at `~/.continue/config.json`):
+
+```json
+{
+  "mcpServers": {
+    "houjin-bangou-api": {
+      "command": "node",
+      "args": [
+        "/home/YOUR_USERNAME/projects/houjin-bangou-api-mcp/dist/server.js"
+      ],
+      "env": {
+        "HOUJIN_BANGOU_API_APPLICATION_ID": "YOUR_APPLICATION_ID"
+      }
+    }
+  }
+}
+```
+
+**Important notes:**
+- Always use absolute paths to `dist/server.js`
+- Set `HOUJIN_BANGOU_API_APPLICATION_ID` in the `env` section, not in your shell profile
+- Restart your MCP client after updating the configuration
+
 ## Development
 
 Tests:
