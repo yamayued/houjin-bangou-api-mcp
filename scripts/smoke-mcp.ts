@@ -1,5 +1,13 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { readFileSync } from "node:fs";
+
+type LiveCheckInput = {
+  corporateNumber: string;
+  name: string;
+  from: string;
+  to: string;
+};
 
 type TextBlock = {
   type: "text";
@@ -18,6 +26,7 @@ function isTextBlock(value: unknown): value is TextBlock {
 }
 
 async function main(): Promise<void> {
+  const input = JSON.parse(readFileSync("./scripts/live-check.json", "utf8")) as LiveCheckInput;
   const transport = new StdioClientTransport({
     command: "node",
     args: ["dist/server.js"],
@@ -43,24 +52,56 @@ async function main(): Promise<void> {
     console.log(JSON.stringify({ toolNames }, null, 2));
 
     if (process.env.HOUJIN_BANGOU_API_APPLICATION_ID) {
-      const callResult = await client.callTool({
+      const numberResult = await client.callTool({
         name: "get_corporation_by_number",
         arguments: {
-          corporateNumber: "7000012050002",
+          corporateNumber: input.corporateNumber,
+        },
+      });
+      const nameResult = await client.callTool({
+        name: "search_corporations_by_name",
+        arguments: {
+          name: input.name,
+        },
+      });
+      const updatesResult = await client.callTool({
+        name: "get_corporation_updates",
+        arguments: {
+          from: input.from,
+          to: input.to,
         },
       });
 
-      const firstText = callResult.content.find(isTextBlock)?.text ?? "";
-      const parsed = JSON.parse(firstText) as {
+      const numberText = numberResult.content.find(isTextBlock)?.text ?? "";
+      const nameText = nameResult.content.find(isTextBlock)?.text ?? "";
+      const updatesText = updatesResult.content.find(isTextBlock)?.text ?? "";
+      const numberParsed = JSON.parse(numberText) as {
         corporations?: Array<{ corporateNumber?: string; name?: string }>;
+      };
+      const nameParsed = JSON.parse(nameText) as {
+        metadata?: { count?: number };
+        corporations?: Array<{ corporateNumber?: string; name?: string }>;
+      };
+      const updatesParsed = JSON.parse(updatesText) as {
+        metadata?: { count?: number };
       };
 
       console.log(
         JSON.stringify(
           {
             liveCheck: {
-              corporateNumber: parsed.corporations?.[0]?.corporateNumber ?? null,
-              name: parsed.corporations?.[0]?.name ?? null,
+              byNumber: {
+                corporateNumber: numberParsed.corporations?.[0]?.corporateNumber ?? null,
+                name: numberParsed.corporations?.[0]?.name ?? null,
+              },
+              byName: {
+                count: nameParsed.metadata?.count ?? null,
+                firstCorporateNumber: nameParsed.corporations?.[0]?.corporateNumber ?? null,
+                firstName: nameParsed.corporations?.[0]?.name ?? null,
+              },
+              updates: {
+                count: updatesParsed.metadata?.count ?? null,
+              },
             },
           },
           null,

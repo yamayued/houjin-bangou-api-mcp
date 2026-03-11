@@ -9,6 +9,18 @@ import { parseCorporationListXml } from "./xml.js";
 const DEFAULT_BASE_URL = "https://api.houjin-bangou.nta.go.jp/4";
 const DEFAULT_RESPONSE_TYPE = "12";
 
+function formatApiError(status: number, body: string): string {
+  const trimmedBody = body.trim();
+  const match = trimmedBody.match(/^(\d{3}),(.*)$/s);
+
+  if (match) {
+    const [, code, message] = match;
+    return `Corporate Number API request failed with ${status} (code ${code}): ${message.trim()}`;
+  }
+
+  return `Corporate Number API request failed with ${status}: ${trimmedBody}`;
+}
+
 export class HoujinBangouApiClient {
   constructor(
     private readonly applicationId: string,
@@ -20,7 +32,7 @@ export class HoujinBangouApiClient {
     params: GetCorporationByNumberParams,
   ): Promise<CorporationListResponse> {
     const query = new URLSearchParams({
-      number: params.corporateNumber,
+      number: params.corporateNumber.trim(),
       history: params.history ? "1" : "0",
       type: DEFAULT_RESPONSE_TYPE,
     });
@@ -32,7 +44,7 @@ export class HoujinBangouApiClient {
     params: SearchCorporationsByNameParams,
   ): Promise<CorporationListResponse> {
     const query = new URLSearchParams({
-      name: params.name,
+      name: params.name.trim(),
       type: DEFAULT_RESPONSE_TYPE,
     });
 
@@ -43,8 +55,8 @@ export class HoujinBangouApiClient {
     params: GetCorporationUpdatesParams,
   ): Promise<CorporationListResponse> {
     const query = new URLSearchParams({
-      from: params.from,
-      to: params.to,
+      from: params.from.trim(),
+      to: params.to.trim(),
       type: DEFAULT_RESPONSE_TYPE,
     });
 
@@ -63,7 +75,7 @@ export class HoujinBangouApiClient {
 
     const body = await response.text();
     if (!response.ok) {
-      throw new Error(`Corporate Number API request failed with ${response.status}: ${body}`);
+      throw new Error(formatApiError(response.status, body));
     }
 
     return parseCorporationListXml(body);
@@ -80,3 +92,5 @@ export function getApplicationIdFromEnv(env: NodeJS.ProcessEnv = process.env): s
 
   return applicationId;
 }
+
+export { formatApiError };

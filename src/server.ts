@@ -13,6 +13,28 @@ function formatJson(value: unknown): string {
 async function main(): Promise<void> {
   const applicationId = getApplicationIdFromEnv();
   const apiClient = new HoujinBangouApiClient(applicationId);
+  const corporateNumberInput = z.object({
+    corporateNumber: z
+      .string()
+      .trim()
+      .regex(/^\d{13}$/, "corporateNumber must be a 13-digit Japanese corporate number."),
+    history: z
+      .boolean()
+      .optional()
+      .describe("Include historical records when true."),
+  });
+  const corporationNameInput = z.object({
+    name: z.string().trim().min(1, "name is required."),
+  });
+  const updateRangeInput = z
+    .object({
+      from: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "from must be YYYY-MM-DD."),
+      to: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "to must be YYYY-MM-DD."),
+    })
+    .refine(({ from, to }) => from <= to, {
+      message: "from must be on or before to.",
+      path: ["to"],
+    });
 
   const server = new McpServer({
     name: "houjin-bangou-api-mcp",
@@ -24,15 +46,7 @@ async function main(): Promise<void> {
     {
       title: "Get Corporation By Number",
       description: "Fetch corporation details from the National Tax Agency Corporate Number API.",
-      inputSchema: {
-        corporateNumber: z
-          .string()
-          .regex(/^\d{13}$/, "corporateNumber must be a 13-digit Japanese corporate number."),
-        history: z
-          .boolean()
-          .optional()
-          .describe("Include historical records when true."),
-      },
+      inputSchema: corporateNumberInput,
     },
     async ({ corporateNumber, history }) => {
       try {
@@ -68,9 +82,7 @@ async function main(): Promise<void> {
     {
       title: "Search Corporations By Name",
       description: "Search corporations by name using the official Corporate Number API.",
-      inputSchema: {
-        name: z.string().min(1, "name is required."),
-      },
+      inputSchema: corporationNameInput,
     },
     async ({ name }) => {
       try {
@@ -103,10 +115,7 @@ async function main(): Promise<void> {
     {
       title: "Get Corporation Updates",
       description: "Fetch corporations updated within a date range from the Corporate Number API.",
-      inputSchema: {
-        from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "from must be YYYY-MM-DD."),
-        to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "to must be YYYY-MM-DD."),
-      },
+      inputSchema: updateRangeInput,
     },
     async ({ from, to }) => {
       try {

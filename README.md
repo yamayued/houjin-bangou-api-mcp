@@ -129,6 +129,9 @@ MCP smoke check:
 npm run smoke:mcp
 ```
 
+The smoke script reads example inputs from `scripts/live-check.json`. If
+`HOUJIN_BANGOU_API_APPLICATION_ID` is set, it exercises all three tools against the live API.
+
 Package dry-run:
 
 ```bash
