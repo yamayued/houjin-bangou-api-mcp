@@ -123,6 +123,19 @@ npm test
 This repository currently focuses on the stdio MCP server. HTTP transport, richer filtering, and
 additional Japanese business datasets can be added later without changing the basic API client.
 
+## Contributing
+
+Public contributions are welcome. Please open a pull request instead of pushing directly to
+`main`.
+
+- Contribution guide: [CONTRIBUTING.md](./CONTRIBUTING.md)
+- Code of conduct: [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)
+
+Pull requests are expected to pass CI:
+
+- `npm test`
+- `npm run build`
+
 ## Security
 
 - Keep your application ID out of Git history, screenshots, and issue reports.
