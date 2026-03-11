@@ -35,44 +35,56 @@ try {
   }
 
   const tarballPath = join(repoRoot, tarballName);
-  run(npmCommand, ["init", "-y"], tempDir);
-  run(npmCommand, ["install", tarballPath], tempDir);
+  try {
+    run(npmCommand, ["init", "-y"], tempDir);
+    run(npmCommand, ["install", tarballPath], tempDir);
 
-  const smokeScriptPath = join(tempDir, "package-smoke.mjs");
-  writeFileSync(
-    smokeScriptPath,
-    [
-      'import { Client } from "@modelcontextprotocol/sdk/client/index.js";',
-      'import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";',
-      "",
-      "const transport = new StdioClientTransport({",
-      "  command: process.execPath,",
-      '  args: ["node_modules/houjin-bangou-api-mcp/dist/server.js"],',
-      "  cwd: process.cwd(),",
-      "  env: {",
-      "    ...process.env,",
-      '    HOUJIN_BANGOU_API_APPLICATION_ID: "placeholder"',
-      "  },",
-      '  stderr: "inherit"',
-      "});",
-      "",
-      'const client = new Client({ name: "package-smoke-client", version: "0.1.0" });',
-      "await client.connect(transport);",
-      "try {",
-      "  const tools = await client.listTools();",
-      "  console.log(JSON.stringify({ toolNames: tools.tools.map((tool) => tool.name).sort() }, null, 2));",
-      "} finally {",
-      "  await client.close();",
-      "}",
-      "",
-    ].join("\n"),
-    "utf8",
-  );
+    const smokeScriptPath = join(tempDir, "package-smoke.mjs");
+    const binPath =
+      process.platform === "win32"
+        ? "node_modules/.bin/houjin-bangou-api-mcp.cmd"
+        : "node_modules/.bin/houjin-bangou-api-mcp";
 
-  const output = run(process.execPath, [smokeScriptPath], tempDir);
-  process.stdout.write(output);
+    writeFileSync(
+      smokeScriptPath,
+      [
+        'import { Client } from "@modelcontextprotocol/sdk/client/index.js";',
+        'import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";',
+        "",
+        "async function listTools(command, args) {",
+        "  const transport = new StdioClientTransport({",
+        "    command,",
+        "    args,",
+        "    cwd: process.cwd(),",
+        "    env: {",
+        "      ...process.env,",
+        '      HOUJIN_BANGOU_API_APPLICATION_ID: "placeholder"',
+        "    },",
+        '    stderr: "inherit"',
+        "  });",
+        '  const client = new Client({ name: "package-smoke-client", version: "0.1.0" });',
+        "  await client.connect(transport);",
+        "  try {",
+        "    const tools = await client.listTools();",
+        "    return tools.tools.map((tool) => tool.name).sort();",
+        "  } finally {",
+        "    await client.close();",
+        "  }",
+        "}",
+        "",
+        "const directToolNames = await listTools(process.execPath, [\"node_modules/houjin-bangou-api-mcp/dist/server.js\"]);",
+        `const binToolNames = await listTools(${JSON.stringify(binPath)}, []);`,
+        "console.log(JSON.stringify({ directToolNames, binToolNames }, null, 2));",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
 
-  rmSync(resolve(tarballPath), { force: true });
+    const output = run(process.execPath, [smokeScriptPath], tempDir);
+    process.stdout.write(output);
+  } finally {
+    rmSync(resolve(tarballPath), { force: true });
+  }
 } finally {
   rmSync(tempDir, { recursive: true, force: true });
 }
