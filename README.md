@@ -1,5 +1,8 @@
 # houjin-bangou-api-mcp
 
+[![CI](https://github.com/yamayued/houjin-bangou-api-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/yamayued/houjin-bangou-api-mcp/actions/workflows/ci.yml)
+[![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
+
 MCP server for the Japan National Tax Agency Corporate Number API.
 
 This project wraps the official Corporate Number Publication Site Web-API and exposes it as MCP
@@ -120,6 +123,18 @@ Tests:
 npm test
 ```
 
+MCP smoke check:
+
+```bash
+npm run smoke:mcp
+```
+
+Package dry-run:
+
+```bash
+npm run check:pack
+```
+
 This repository currently focuses on the stdio MCP server. HTTP transport, richer filtering, and
 additional Japanese business datasets can be added later without changing the basic API client.
 
@@ -130,6 +145,7 @@ Public contributions are welcome. Please open a pull request instead of pushing 
 
 - Contribution guide: [CONTRIBUTING.md](./CONTRIBUTING.md)
 - Code of conduct: [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)
+- Roadmap: [ROADMAP.md](./ROADMAP.md)
 
 Pull requests are expected to pass CI:
 
