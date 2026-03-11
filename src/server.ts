@@ -10,6 +10,26 @@ function formatJson(value: unknown): string {
   return JSON.stringify(value, null, 2);
 }
 
+function isValidIsoDate(value: string): boolean {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) {
+    return false;
+  }
+
+  const [, yearText, monthText, dayText] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return (
+    Number.isFinite(date.getTime()) &&
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
 async function main(): Promise<void> {
   const applicationId = getApplicationIdFromEnv();
   const apiClient = new HoujinBangouApiClient(applicationId);
@@ -28,8 +48,16 @@ async function main(): Promise<void> {
   });
   const updateRangeInput = z
     .object({
-      from: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "from must be YYYY-MM-DD."),
-      to: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "to must be YYYY-MM-DD."),
+      from: z
+        .string()
+        .trim()
+        .regex(/^\d{4}-\d{2}-\d{2}$/, "from must be YYYY-MM-DD.")
+        .refine(isValidIsoDate, "from must be a real calendar date."),
+      to: z
+        .string()
+        .trim()
+        .regex(/^\d{4}-\d{2}-\d{2}$/, "to must be YYYY-MM-DD.")
+        .refine(isValidIsoDate, "to must be a real calendar date."),
     })
     .refine(({ from, to }) => from <= to, {
       message: "from must be on or before to.",

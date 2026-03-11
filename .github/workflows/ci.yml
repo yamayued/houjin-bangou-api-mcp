@@ -31,3 +31,6 @@ jobs:
 
       - name: Check package contents
         run: npm run check:pack
+
+      - name: Smoke test packaged install
+        run: npm run smoke:package

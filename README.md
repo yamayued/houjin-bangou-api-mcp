@@ -138,6 +138,12 @@ Package dry-run:
 npm run check:pack
 ```
 
+Packaged install smoke check:
+
+```bash
+npm run smoke:package
+```
+
 This repository currently focuses on the stdio MCP server. HTTP transport, richer filtering, and
 additional Japanese business datasets can be added later without changing the basic API client.
 

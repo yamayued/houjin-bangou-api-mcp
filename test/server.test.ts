@@ -76,3 +76,21 @@ test("server rejects reversed update date ranges", async () => {
     );
   });
 });
+
+test("server rejects impossible calendar dates", async () => {
+  await withClient(async (client) => {
+    const result = await client.callTool({
+      name: "get_corporation_updates",
+      arguments: {
+        from: "2026-02-30",
+        to: "2026-03-01",
+      },
+    });
+
+    assert.equal(result.isError, true);
+    assert.match(
+      result.content[0]?.type === "text" ? result.content[0].text : "",
+      /from must be a real calendar date\./,
+    );
+  });
+});

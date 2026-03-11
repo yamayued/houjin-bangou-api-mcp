@@ -22,6 +22,7 @@
     "check:pack": "npm run build && npm pack --dry-run",
     "prepublishOnly": "npm test && npm run build && npm run check:pack",
     "smoke:mcp": "npm run build && tsx scripts/smoke-mcp.ts",
+    "smoke:package": "npm run build && tsx scripts/package-smoke.ts",
     "start": "node dist/server.js",
     "test": "tsx --test test/**/*.test.ts"
   },
