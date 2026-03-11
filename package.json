@@ -19,6 +19,7 @@
   "scripts": {
     "clean": "node --input-type=module --eval \"import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true });\"",
     "build": "npm run clean && tsc -p tsconfig.json",
+    "check:companies": "npm run build && tsx scripts/manual-company-check.ts",
     "dev": "tsx src/server.ts",
     "check:pack": "npm run build && npm pack --dry-run",
     "prepublishOnly": "npm test && npm run build && npm run check:pack",

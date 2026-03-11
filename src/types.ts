@@ -6,14 +6,17 @@ export interface CorporationRecord {
   updateDate: string | null;
   changeDate: string | null;
   name: string;
+  nameImageId: string | null;
   kind: string | null;
   prefectureName: string | null;
   cityName: string | null;
   streetNumber: string | null;
+  addressImageId: string | null;
   prefectureCode: string | null;
   cityCode: string | null;
   postCode: string | null;
   addressOutside: string | null;
+  addressOutsideImageId: string | null;
   closeDate: string | null;
   closeCause: string | null;
   successorCorporateNumber: string | null;

@@ -14,6 +14,9 @@ test("parseCorporationListXml normalizes a single corporation response", () => {
   assert.equal(parsed.corporations.length, 1);
   assert.equal(parsed.corporations[0]?.corporateNumber, "7000012050002");
   assert.equal(parsed.corporations[0]?.name, "国税庁");
+  assert.equal(parsed.corporations[0]?.nameImageId, null);
+  assert.equal(parsed.corporations[0]?.addressImageId, null);
+  assert.equal(parsed.corporations[0]?.addressOutsideImageId, null);
   assert.equal(parsed.corporations[0]?.correct, true);
   assert.equal(parsed.corporations[0]?.hidden, false);
 });

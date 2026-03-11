@@ -1,0 +1,24 @@
+{
+  "companies": [
+    {
+      "label": "National Tax Agency",
+      "name": "国税庁",
+      "expectedCorporateNumber": "7000012050002"
+    },
+    {
+      "label": "Nintendo",
+      "name": "任天堂株式会社",
+      "expectedCorporateNumber": "1130001011420"
+    },
+    {
+      "label": "Toyota Motor",
+      "name": "トヨタ自動車株式会社",
+      "expectedCorporateNumber": "1180301018771"
+    },
+    {
+      "label": "Sony Group",
+      "name": "ソニーグループ",
+      "expectedCorporateNumber": "5010401067252"
+    }
+  ]
+}

@@ -144,6 +144,12 @@ Packaged install smoke check:
 npm run smoke:package
 ```
 
+Manual real-company check:
+
+```bash
+npm run check:companies
+```
+
 This repository currently focuses on the stdio MCP server. HTTP transport, richer filtering, and
 additional Japanese business datasets can be added later without changing the basic API client.
 
