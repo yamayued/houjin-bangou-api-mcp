@@ -73,7 +73,25 @@ test("formatApiError normalizes code-prefixed API responses", () => {
 
   assert.equal(
     message,
-    "Corporate Number API request failed with 400 (code 030): invalid request date",
+    "Corporate Number API request failed with 400 (code 030): invalid request date Hint: Check date filters, use YYYY-MM-DD, and stay within the documented date range.",
+  );
+});
+
+test("formatApiError adds a required-argument hint for missing parameter errors", () => {
+  const message = formatApiError(400, "100,missing name parameter");
+
+  assert.equal(
+    message,
+    "Corporate Number API request failed with 400 (code 100): missing name parameter Hint: Check that the required tool arguments are present and non-empty.",
+  );
+});
+
+test("formatApiError adds an application-id hint for authorization-like failures", () => {
+  const message = formatApiError(403, "invalid application id");
+
+  assert.equal(
+    message,
+    "Corporate Number API request failed with 403: invalid application id Hint: Check that HOUJIN_BANGOU_API_APPLICATION_ID is set to a valid application ID.",
   );
 });
 
@@ -274,6 +292,6 @@ test("HoujinBangouApiClient builds a clearer API error message", async () => {
 
   await assert.rejects(
     () => client.searchCorporationsByName({ name: "   " }),
-    /Corporate Number API request failed with 400 \(code 100\): missing name parameter/,
+    /Corporate Number API request failed with 400 \(code 100\): missing name parameter Hint: Check that the required tool arguments are present and non-empty\./,
   );
 });

@@ -430,6 +430,10 @@ usage and stop early when they already have enough records.
 
 Use these checks in order when setting up or debugging.
 
+When the upstream API returns a code-prefixed validation failure, this MCP server preserves the
+official message and may append a short `Hint:` sentence to point you toward the most likely input
+problem.
+
 ### Basic test suite
 
 ```bash

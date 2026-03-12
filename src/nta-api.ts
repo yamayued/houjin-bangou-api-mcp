@@ -14,6 +14,7 @@ const DEFAULT_RESPONSE_TYPE: ApiResponseType = "12";
 const CORPORATION_KIND_DELIMITER = ",";
 const SHIFT_JIS_RESPONSE_TYPE: ApiResponseType = "01";
 const DEFAULT_REQUEST_TIMEOUT_MS = 15_000;
+const API_ERROR_HINT_LABEL = "Hint:";
 
 function appendOptionalParam(params: URLSearchParams, key: string, value: string | number | null | undefined): void {
   if (value === null || value === undefined) {
@@ -44,16 +45,62 @@ function appendKinds(params: URLSearchParams, kinds: string[] | undefined): void
   params.set("kind", kinds.join(CORPORATION_KIND_DELIMITER));
 }
 
+function getApiErrorHint(status: number, code: string | undefined, message: string): string | null {
+  const normalizedMessage = message.trim().toLowerCase();
+
+  if (
+    status === 401 ||
+    status === 403 ||
+    /application id|app.?id|authorization|access denied|forbidden/.test(normalizedMessage)
+  ) {
+    return "Check that HOUJIN_BANGOU_API_APPLICATION_ID is set to a valid application ID.";
+  }
+
+  if (code === "100" || /missing|required|blank|empty/.test(normalizedMessage)) {
+    return "Check that the required tool arguments are present and non-empty.";
+  }
+
+  if (code === "030" || /date|assignment|from|to/.test(normalizedMessage)) {
+    return "Check date filters, use YYYY-MM-DD, and stay within the documented date range.";
+  }
+
+  if (/address/.test(normalizedMessage)) {
+    return "Use a 2-digit prefecture code or a 5-digit city code for address filters.";
+  }
+
+  if (/corporate number|number parameter|number format/.test(normalizedMessage)) {
+    return "Use a 13-digit corporate number, or pass up to 10 values through corporateNumbers.";
+  }
+
+  return null;
+}
+
+function appendApiErrorHint(baseMessage: string, hint: string | null): string {
+  if (!hint) {
+    return baseMessage;
+  }
+
+  return `${baseMessage} ${API_ERROR_HINT_LABEL} ${hint}`;
+}
+
 function formatApiError(status: number, body: string): string {
   const trimmedBody = body.trim();
   const match = trimmedBody.match(/^(\d{3}),(.*)$/s);
 
   if (match) {
     const [, code, message] = match;
-    return `Corporate Number API request failed with ${status} (code ${code}): ${message.trim()}`;
+    const normalizedMessage = message.trim();
+
+    return appendApiErrorHint(
+      `Corporate Number API request failed with ${status} (code ${code}): ${normalizedMessage}`,
+      getApiErrorHint(status, code, normalizedMessage),
+    );
   }
 
-  return `Corporate Number API request failed with ${status}: ${trimmedBody}`;
+  return appendApiErrorHint(
+    `Corporate Number API request failed with ${status}: ${trimmedBody}`,
+    getApiErrorHint(status, undefined, trimmedBody),
+  );
 }
 
 function resolveResponseType(value: ApiResponseType | undefined): ApiResponseType {

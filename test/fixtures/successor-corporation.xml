@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<corporations>
+  <lastUpdateDate>2026-03-11</lastUpdateDate>
+  <count>1</count>
+  <divideNumber>1</divideNumber>
+  <divideSize>1</divideSize>
+  <corporation>
+    <sequenceNumber>1</sequenceNumber>
+    <corporateNumber>1234567890123</corporateNumber>
+    <process>01</process>
+    <correct>1</correct>
+    <updateDate>2021-04-01</updateDate>
+    <changeDate>2021-04-01</changeDate>
+    <name>承継法人サンプル株式会社</name>
+    <nameImageId />
+    <kind>301</kind>
+    <prefectureName>東京都</prefectureName>
+    <cityName>千代田区</cityName>
+    <streetNumber>1-1-1</streetNumber>
+    <addressImageId />
+    <prefectureCode>13</prefectureCode>
+    <cityCode>101</cityCode>
+    <postCode>1000001</postCode>
+    <addressOutside>サンプルビル 2F</addressOutside>
+    <addressOutsideImageId />
+    <closeDate />
+    <closeCause />
+    <successorCorporateNumber />
+    <changeCause>01</changeCause>
+    <assignmentDate>2021-04-01</assignmentDate>
+    <latest>1</latest>
+    <enName>Successor Corporation Sample Co., Ltd.</enName>
+    <enPrefectureName>Tokyo</enPrefectureName>
+    <enCityName>Chiyoda-ku</enCityName>
+    <enAddressOutside>Sample Building 2F</enAddressOutside>
+    <furigana>ショウケイホウジンサンプル</furigana>
+    <hihyoji>0</hihyoji>
+  </corporation>
+</corporations>
