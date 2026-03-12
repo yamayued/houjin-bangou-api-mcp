@@ -39,12 +39,6 @@ documented request conditions for its three core endpoints:
 - `/name`
 - `/diff`
 
-The API `type` switch is also exposed:
-
-- `12`: XML, returned by this MCP as normalized structured JSON-style data
-- `02`: Unicode CSV, returned by this MCP as raw text payload
-- `01`: Shift-JIS CSV, returned by this MCP as raw text payload
-
 ## Requirements
 
 - Node.js 18 or later
@@ -54,21 +48,135 @@ Official documentation:
 
 - [Corporate Number API portal](https://www.houjin-bangou.nta.go.jp/webapi/index.html)
 - [Corporate Number API specification archive](https://www.houjin-bangou.nta.go.jp/webapi/kyuusiyousyo.html)
+- [Web-API Ver.4.0 request and response details](https://www.houjin-bangou.nta.go.jp/pc/webapi/images/k-web-api-kinou-ver4.pdf)
 
-## Setup
+## Quick Start
+
+This is the shortest path from clone to a successful MCP call.
+
+### 1. Install dependencies
 
 ```bash
 npm install
 ```
 
-Create a local environment file or otherwise export the required variable:
+### 2. Set your application ID
+
+Use an environment variable and never commit the real value.
 
 ```bash
 HOUJIN_BANGOU_API_APPLICATION_ID=YOUR_APPLICATION_ID
 ```
 
-For local development, copy `.env.example` and load it with your preferred workflow. Do not commit
-real credentials.
+For local development, copy `.env.example` and load it with your preferred workflow.
+
+### 3. Build the server
+
+```bash
+npm run build
+```
+
+### 4. Point your MCP host at the built server
+
+#### Claude Desktop
+
+```json
+{
+  "mcpServers": {
+    "houjin-bangou-api": {
+      "command": "node",
+      "args": [
+        "/absolute/path/to/houjin-bangou-api-mcp/dist/server.js"
+      ],
+      "env": {
+        "HOUJIN_BANGOU_API_APPLICATION_ID": "YOUR_APPLICATION_ID"
+      }
+    }
+  }
+}
+```
+
+#### Codex
+
+```json
+{
+  "mcpServers": {
+    "houjin-bangou-api": {
+      "command": "node",
+      "args": [
+        "/absolute/path/to/houjin-bangou-api-mcp/dist/server.js"
+      ],
+      "env": {
+        "HOUJIN_BANGOU_API_APPLICATION_ID": "YOUR_APPLICATION_ID"
+      }
+    }
+  }
+}
+```
+
+#### Generic MCP host
+
+Use the same command-based configuration if your host accepts an `mcpServers` object.
+
+```json
+{
+  "mcpServers": {
+    "houjin-bangou-api": {
+      "command": "node",
+      "args": [
+        "/absolute/path/to/houjin-bangou-api-mcp/dist/server.js"
+      ],
+      "env": {
+        "HOUJIN_BANGOU_API_APPLICATION_ID": "YOUR_APPLICATION_ID"
+      }
+    }
+  }
+}
+```
+
+### 5. Make the first successful call
+
+Start with the smallest happy path:
+
+Tool:
+
+```text
+get_corporation_by_number
+```
+
+Arguments:
+
+```json
+{
+  "corporateNumber": "7000012050002"
+}
+```
+
+Expected result when `responseType` is omitted:
+
+```json
+{
+  "metadata": {
+    "lastUpdateDate": "2026-03-11",
+    "count": 1,
+    "divideNumber": 1,
+    "divideSize": 1
+  },
+  "corporations": [
+    {
+      "corporateNumber": "7000012050002",
+      "name": "国税庁",
+      "latest": true
+    }
+  ]
+}
+```
+
+Once that works, try:
+
+- `search_corporations_by_name` with `{ "name": "任天堂株式会社" }`
+- `get_corporation_updates` with `{ "from": "2026-03-01", "to": "2026-03-05" }`
+- `get_corporation_by_number` with `responseType: "02"` or `responseType: "01"`
 
 ## Run
 
@@ -106,8 +214,8 @@ Inputs:
 Inputs:
 
 - `name`: corporation or organization name
-- `mode`: optional search mode, `1` prefix or `2` partial match
 - `responseType`: optional response type, `12` XML, `02` Unicode CSV, `01` Shift-JIS CSV
+- `mode`: optional search mode, `1` prefix or `2` partial match
 - `target`: optional target, `1` name, `2` furigana, `3` both
 - `address`: optional 2-digit prefecture code or 5-digit city code
 - `kinds`: optional array of corporation kind filters: `01`, `02`, `03`, `04`
@@ -128,78 +236,222 @@ Inputs:
 - `kinds`: optional array of corporation kind filters: `01`, `02`, `03`, `04`
 - `divide`: optional page number for paginated API results
 
-## Example MCP configuration
+## Input Rules and API Limits
 
-Example command-based configuration for MCP clients that can spawn local servers:
+These rules are enforced by the MCP server before the request reaches the official API.
+
+- `corporateNumber` must be a 13-digit string
+- `corporateNumbers` can contain 1 to 10 values
+- `corporateNumber` and `corporateNumbers` are mutually exclusive
+- `address` must be either a 2-digit prefecture code or a 5-digit city code
+- `assignmentFrom` and `assignmentTo` must be real dates on or after `2015-10-05`
+- `assignmentFrom` must be on or before `assignmentTo`
+- `from` and `to` for `get_corporation_updates` must be real dates on or after `2015-12-01`
+- `from` and `to` for `get_corporation_updates` must stay within 50 days inclusive
+- `divide` must be a positive integer
+
+## Response Types
+
+The official API `type` switch is exposed through `responseType`.
+
+- `12`: XML from the source API, returned by this MCP as structured JSON-style data
+- `02`: Unicode CSV from the source API, returned by this MCP as raw text
+- `01`: Shift-JIS CSV from the source API, returned by this MCP as raw text
+
+### Structured example: `responseType: "12"`
 
 ```json
 {
-  "mcpServers": {
-    "houjin-bangou-api": {
-      "command": "node",
-      "args": [
-        "/absolute/path/to/houjin-bangou-api-mcp/dist/server.js"
-      ],
-      "env": {
-        "HOUJIN_BANGOU_API_APPLICATION_ID": "YOUR_APPLICATION_ID"
-      }
+  "metadata": {
+    "lastUpdateDate": "2026-03-11",
+    "count": 1,
+    "divideNumber": 1,
+    "divideSize": 1
+  },
+  "corporations": [
+    {
+      "corporateNumber": "7000012050002",
+      "name": "国税庁",
+      "prefectureName": "東京都",
+      "cityName": "千代田区",
+      "latest": true
     }
-  }
+  ]
 }
 ```
 
-If your client supports `npx`, you can also point it at the published package once releases are
-available.
+### Raw CSV example: `responseType: "02"` or `responseType: "01"`
 
-## Development
+```json
+{
+  "responseType": "02",
+  "contentType": "text/csv;charset=UTF-8",
+  "raw": "2026-03-11,1,1,1\n1,7000012050002,01,1,2018-04-02,2015-10-05,\"国税庁\",..."
+}
+```
 
-Tests:
+Use `12` when you want fields you can safely consume in tools or downstream code. Use `01` or `02`
+when you need the source CSV payload.
+
+## Verification Checklist
+
+Use these checks in order when setting up or debugging.
+
+### Basic test suite
 
 ```bash
 npm test
 ```
 
-MCP smoke check:
+Expected result:
+
+- all tests pass
+
+### Build
+
+```bash
+npm run build
+```
+
+Expected result:
+
+- `dist/server.js` is generated without TypeScript errors
+
+### MCP connection check
 
 ```bash
 npm run smoke:mcp
 ```
 
-The smoke script reads example inputs from `scripts/live-check.json`. If
-`HOUJIN_BANGOU_API_APPLICATION_ID` is set, it exercises all three tools against the live API.
+Expected result:
 
-Package dry-run:
+- the three tools are listed
+- if `HOUJIN_BANGOU_API_APPLICATION_ID` is set, live API calls also succeed
 
-```bash
-npm run check:pack
-```
-
-Packaged install smoke check:
-
-```bash
-npm run smoke:package
-```
-
-Manual real-company check:
+### Real-company check
 
 ```bash
 npm run check:companies
 ```
 
-Advanced filter check:
+Expected result:
+
+- National Tax Agency, Nintendo, Toyota Motor, and Sony Group are all found as expected
+
+### Advanced filter check
 
 ```bash
 npm run check:advanced-filters
 ```
 
-Response type check:
+Expected result:
+
+- multiple corporate numbers resolve in one request
+- filtered name search returns the expected narrow result set
+- filtered diff search returns live update records
+
+### Response type check
 
 ```bash
 npm run check:response-types
 ```
 
-This repository currently focuses on the stdio MCP server. HTTP transport, richer filtering, and
-additional Japanese business datasets can be added later without changing the basic API client.
+Expected result:
+
+- `12` returns structured data
+- `02` returns Unicode CSV text
+- `01` returns Shift-JIS CSV text decoded into readable output
+
+### Packaged install check
+
+```bash
+npm run smoke:package
+```
+
+Expected result:
+
+- installed package entrypoints expose the three tools
+- missing application ID fails clearly
+
+### Package dry-run
+
+```bash
+npm run check:pack
+```
+
+Expected result:
+
+- `npm pack --dry-run` succeeds and includes the intended files
+
+## Installation Paths
+
+### Use from this repository today
+
+Clone the repository, run `npm install`, build it, and point your MCP host at
+`/absolute/path/to/houjin-bangou-api-mcp/dist/server.js`.
+
+### Use from npm later
+
+This repository is ready for package-oriented verification, but npm publishing is still a future
+distribution path. Once published, the README can add an `npx`-based install path alongside the
+repository-based setup above.
+
+## Common Issues
+
+### Missing application ID
+
+Symptom:
+
+- the server exits immediately with `Missing HOUJIN_BANGOU_API_APPLICATION_ID`
+
+Fix:
+
+- set `HOUJIN_BANGOU_API_APPLICATION_ID` in the environment passed to the MCP host
+
+### Diff range is rejected
+
+Symptom:
+
+- `from must be on or before to`
+- `from and to must be within 50 days`
+- `from must be on or after 2015-12-01`
+
+Fix:
+
+- keep the date window within 50 days inclusive
+- use dates on or after `2015-12-01`
+
+### Name assignment dates are rejected
+
+Symptom:
+
+- `assignmentFrom must be on or after 2015-10-05`
+- `assignmentTo must be on or after 2015-10-05`
+
+Fix:
+
+- use assignment date filters on or after `2015-10-05`
+
+### Address code is rejected
+
+Symptom:
+
+- `address must be a 2-digit prefecture code or 5-digit city code`
+
+Fix:
+
+- pass values such as `13` for Tokyo prefecture or `13101` for Chiyoda City
+
+### CSV was expected but structured data came back
+
+Symptom:
+
+- the result contains `metadata` and `corporations`
+
+Fix:
+
+- set `responseType` to `02` or `01`
+- leave `responseType` unset or use `12` when you want structured output
 
 ## Contributing
 
