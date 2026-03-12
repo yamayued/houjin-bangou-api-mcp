@@ -64,8 +64,16 @@ npm install
 
 Use an environment variable and never commit the real value.
 
+macOS or Linux:
+
 ```bash
-HOUJIN_BANGOU_API_APPLICATION_ID=YOUR_APPLICATION_ID
+export HOUJIN_BANGOU_API_APPLICATION_ID=YOUR_APPLICATION_ID
+```
+
+Windows PowerShell:
+
+```powershell
+$env:HOUJIN_BANGOU_API_APPLICATION_ID = "YOUR_APPLICATION_ID"
 ```
 
 For local development, copy `.env.example` and load it with your preferred workflow.
@@ -134,6 +142,24 @@ Use the same command-based configuration if your host accepts an `mcpServers` ob
 }
 ```
 
+#### Windows path example
+
+```json
+{
+  "mcpServers": {
+    "houjin-bangou-api": {
+      "command": "node",
+      "args": [
+        "C:\\Users\\owner\\OneDrive\\Desktop\\my_project\\houjin-bangou-api-mcp\\dist\\server.js"
+      ],
+      "env": {
+        "HOUJIN_BANGOU_API_APPLICATION_ID": "YOUR_APPLICATION_ID"
+      }
+    }
+  }
+}
+```
+
 ### 5. Make the first successful call
 
 Start with the smallest happy path:
@@ -178,6 +204,47 @@ Once that works, try:
 - `get_corporation_updates` with a recent date window such as `{ "from": "YYYY-MM-DD", "to": "YYYY-MM-DD" }`
 - `get_corporation_by_number` with `responseType: "02"` or `responseType: "01"`
 
+### 6. Run the recommended end-to-end live check
+
+After the first call works, use one command for the full live verification path:
+
+```bash
+npm run verify:live
+```
+
+Expected result:
+
+- the server builds once
+- MCP tool registration succeeds
+- the real-company checks pass
+- advanced filters pass
+- all response types pass
+
+If `HOUJIN_BANGOU_API_APPLICATION_ID` is missing, this command fails immediately with a clear
+message instead of running partial checks.
+
+## Getting an Application ID
+
+You need a National Tax Agency Web-API application ID before the MCP server can call the live API.
+
+As of March 12, 2026, the official flow is:
+
+1. Open the official application ID registration page on the invoice site.
+2. Submit the registration form and receive an application ID.
+3. If you will use that ID with the Corporate Number API, follow the current instructions on the
+   Corporate Number API portal, which point to the invoice site flow and email confirmation.
+
+Official pages:
+
+- [Corporate Number API portal](https://www.houjin-bangou.nta.go.jp/webapi/index.html)
+- [Invoice site Web-API page](https://www.invoice-kohyo.nta.go.jp/web-api/index.html)
+- [Application ID registration page](https://www.invoice-kohyo.nta.go.jp/app/id_todokede)
+
+At the time of writing, the Corporate Number API portal instructs users who obtained an ID from the
+invoice site to email `invoice-webapi@nta.go.jp` with their name, email address, and a note that
+they want to use the Corporate Number API. Always check the official pages above for the latest
+procedure before sharing credentials or support instructions.
+
 ## Run
 
 Development:
@@ -197,6 +264,9 @@ Production entrypoint:
 ```bash
 npm start
 ```
+
+`npm start` launches a stdio MCP server and waits for a client connection. Seeing no prompt after
+startup is normal.
 
 ## MCP Tools
 
@@ -295,6 +365,67 @@ This example shows the shape of a successful response, not a fixed live snapshot
 Use `12` when you want fields you can safely consume in tools or downstream code. Use `01` or `02`
 when you need the source CSV payload.
 
+## Structured Response Fields
+
+When `responseType` is omitted or set to `12`, the MCP server returns:
+
+- `metadata`: source pagination and result metadata from the official API
+- `corporations`: normalized corporation records from the XML payload
+
+Common `metadata` fields:
+
+- `lastUpdateDate`: source update date reported by the API
+- `count`: total record count for the request
+- `divideNumber`: current page number reported by the source API
+- `divideSize`: total number of pages reported by the source API
+
+Common `corporations[]` fields:
+
+- `corporateNumber`: 13-digit corporate number
+- `name`: Japanese corporation name
+- `furigana`: furigana when the API provides it
+- `prefectureName`, `cityName`, `streetNumber`: Japanese address fragments
+- `enName`, `enPrefectureName`, `enCityName`, `enAddressOutside`: English fields when present
+- `kind`: official corporation kind code
+- `process`: official source process code
+- `correct`: normalized boolean flag from the source `0` or `1`
+- `latest`: normalized boolean flag from the source `0` or `1`
+- `hidden`: normalized boolean flag from the source hidden marker
+- `closeDate`, `closeCause`: closure metadata for dissolved or closed corporations
+- `successorCorporateNumber`: successor corporation number when present
+- `changeCause`: official reason code for a change
+- `assignmentDate`, `updateDate`, `changeDate`: important source dates
+
+The MCP server keeps official field names close to the source API so users can map the values back
+to the National Tax Agency documentation. For the normative meaning of codes such as `kind`,
+`process`, `closeCause`, and `changeCause`, use the official Ver.4.0 specification:
+
+- [Web-API Ver.4.0 request and response details](https://www.houjin-bangou.nta.go.jp/pc/webapi/images/k-web-api-kinou-ver4.pdf)
+
+## Pagination
+
+The official API paginates some responses. This MCP server exposes the same page metadata through
+`metadata.count`, `metadata.divideNumber`, and `metadata.divideSize`.
+
+Typical workflow:
+
+1. Call `search_corporations_by_name` or `get_corporation_updates` without `divide` first.
+2. Read `metadata.divideSize`.
+3. If `divideSize` is greater than `1`, call the same tool again with `divide: 2`, `divide: 3`,
+   and so on until you reach the last page.
+
+Illustrative example:
+
+```json
+{
+  "name": "株式会社",
+  "divide": 2
+}
+```
+
+The MCP server does not auto-follow all pages yet. That is intentional so callers can control API
+usage and stop early when they already have enough records.
+
 ## Verification Checklist
 
 Use these checks in order when setting up or debugging.
@@ -329,6 +460,18 @@ Expected result:
 
 - the three tools are listed
 - if `HOUJIN_BANGOU_API_APPLICATION_ID` is set, live API calls also succeed
+
+### One-command live verification
+
+```bash
+npm run verify:live
+```
+
+Expected result:
+
+- build runs once at the start
+- the script stops on the first failing live check
+- successful output ends with `verify:live completed successfully`
 
 ### Real-company check
 
@@ -374,6 +517,7 @@ Expected result:
 
 - installed package entrypoints expose the three tools
 - missing application ID fails clearly
+- Windows installs work even when the repository path contains non-ASCII characters
 
 ### Package dry-run
 

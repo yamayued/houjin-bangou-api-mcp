@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { execFileSync, execSync, spawnSync } from "node:child_process";
@@ -61,9 +61,11 @@ try {
   }
 
   const tarballPath = join(repoRoot, tarballName);
+  const tempTarballPath = join(tempDir, tarballName);
   try {
+    copyFileSync(tarballPath, tempTarballPath);
     run(npmCommand, ["init", "-y"], tempDir);
-    run(npmCommand, ["install", tarballPath], tempDir);
+    run(npmCommand, ["install", tempTarballPath], tempDir);
 
     const smokeScriptPath = join(tempDir, "package-smoke.mjs");
     const binPath =
@@ -144,6 +146,7 @@ try {
     );
   } finally {
     rmSync(resolve(tarballPath), { force: true });
+    rmSync(resolve(tempTarballPath), { force: true });
   }
 } finally {
   rmSync(tempDir, { recursive: true, force: true });
