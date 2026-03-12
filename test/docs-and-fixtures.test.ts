@@ -27,6 +27,10 @@ test("README documents first-time setup, verification, package imports, and read
   assert.ok(readme.includes("$env:HOUJIN_BANGOU_API_APPLICATION_ID = \"YOUR_APPLICATION_ID\""));
   assert.ok(readme.includes(`"name": "${NATIONAL_TAX_AGENCY_NAME}"`));
   assert.ok(readme.includes(`{ "name": "${NINTENDO_NAME}" }`));
+  assert.ok(readme.includes("Claude Code `.mcp.json`"));
+  assert.ok(readme.includes("codex mcp add houjin-bangou-api"));
+  assert.ok(readme.includes("[mcp_servers.houjin-bangou-api]"));
+  assert.ok(readme.includes("~/.continue/config.yaml"));
   assert.ok(readme.includes("## Package Imports"));
   assert.ok(readme.includes('from "houjin-bangou-api-mcp";'));
   assert.ok(readme.includes("HoujinBangouApiClient"));

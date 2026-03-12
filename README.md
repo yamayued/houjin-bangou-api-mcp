@@ -109,7 +109,17 @@ npm run build
 
 ### 4. Point your MCP host at the built server
 
-#### Claude Desktop
+All MCP clients need the same launch details:
+
+- command: `node`
+- args: the absolute path to `dist/server.js`
+- env: `HOUJIN_BANGOU_API_APPLICATION_ID`
+
+If your client has a UI for adding a local stdio MCP server, use those values directly.
+
+#### JSON-based hosts: Claude Desktop, Claude Code `.mcp.json`, and compatible clients
+
+Use this when your client reads an `mcpServers` JSON object:
 
 ```json
 {
@@ -127,42 +137,39 @@ npm run build
 }
 ```
 
-#### Codex
+The same entry works well in a project-local `.mcp.json`. If you already use Claude Desktop, you
+can also reuse the same `mcpServers` entry there and import it into Claude Code later.
 
-```json
-{
-  "mcpServers": {
-    "houjin-bangou-api": {
-      "command": "node",
-      "args": [
-        "/absolute/path/to/houjin-bangou-api-mcp/dist/server.js"
-      ],
-      "env": {
-        "HOUJIN_BANGOU_API_APPLICATION_ID": "YOUR_APPLICATION_ID"
-      }
-    }
-  }
-}
+#### Codex CLI
+
+Add the server once:
+
+```bash
+codex mcp add houjin-bangou-api --env HOUJIN_BANGOU_API_APPLICATION_ID=YOUR_APPLICATION_ID -- node /absolute/path/to/houjin-bangou-api-mcp/dist/server.js
 ```
 
-#### Generic MCP host
+Equivalent `~/.codex/config.toml` entry:
 
-Use the same command-based configuration if your host accepts an `mcpServers` object.
+```toml
+[mcp_servers.houjin-bangou-api]
+command = "node"
+args = ["/absolute/path/to/houjin-bangou-api-mcp/dist/server.js"]
+env = { HOUJIN_BANGOU_API_APPLICATION_ID = "YOUR_APPLICATION_ID" }
+```
 
-```json
-{
-  "mcpServers": {
-    "houjin-bangou-api": {
-      "command": "node",
-      "args": [
-        "/absolute/path/to/houjin-bangou-api-mcp/dist/server.js"
-      ],
-      "env": {
-        "HOUJIN_BANGOU_API_APPLICATION_ID": "YOUR_APPLICATION_ID"
-      }
-    }
-  }
-}
+#### Continue
+
+Continue uses YAML-based MCP configuration. Add the same server under `~/.continue/config.yaml`
+or in a dedicated file inside `.continue/mcpServers/`:
+
+```yaml
+mcpServers:
+  houjin-bangou-api:
+    command: node
+    args:
+      - /absolute/path/to/houjin-bangou-api-mcp/dist/server.js
+    env:
+      HOUJIN_BANGOU_API_APPLICATION_ID: YOUR_APPLICATION_ID
 ```
 
 #### Windows path example
@@ -182,6 +189,13 @@ Use the same command-based configuration if your host accepts an `mcpServers` ob
   }
 }
 ```
+
+Tips:
+
+- Always use an absolute path to `dist/server.js`
+- Keep the application ID in the client config `env` block or `--env` flag
+- Run `npm run build` again after pulling new commits
+- Restart or reload the MCP client after changing the configuration
 
 ### 5. Make the first successful call
 
