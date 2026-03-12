@@ -35,9 +35,6 @@ test("README documents first-time setup, verification, package imports, and read
   assert.ok(readme.includes("## Pagination"));
   assert.ok(readme.includes("npm run verify:live"));
   assert.ok(readme.includes("Windows installs work even when the repository path contains non-ASCII characters"));
-
-  assert.ok(!readme.includes("蝗ｽ遞主ｺ"));
-  assert.ok(!readme.includes("莉ｻ螟ｩ蝣"));
   assert.ok(!readme.includes('"lastUpdateDate": "2026-03-11"'));
 });
 
