@@ -192,6 +192,12 @@ Advanced filter check:
 npm run check:advanced-filters
 ```
 
+Response type check:
+
+```bash
+npm run check:response-types
+```
+
 This repository currently focuses on the stdio MCP server. HTTP transport, richer filtering, and
 additional Japanese business datasets can be added later without changing the basic API client.
 

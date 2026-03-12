@@ -21,6 +21,7 @@
     "build": "npm run clean && tsc -p tsconfig.json",
     "check:advanced-filters": "npm run build && tsx scripts/advanced-filter-check.ts",
     "check:companies": "npm run build && tsx scripts/manual-company-check.ts",
+    "check:response-types": "npm run build && tsx scripts/response-type-check.ts",
     "dev": "tsx src/server.ts",
     "check:pack": "npm run build && npm pack --dry-run",
     "prepublishOnly": "npm test && npm run build && npm run check:pack",
