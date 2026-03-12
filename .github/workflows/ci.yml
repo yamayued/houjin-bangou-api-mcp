@@ -8,6 +8,40 @@ on:
 
 jobs:
   test-and-build:
+    name: test-and-build (${{ matrix.os }}, Node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+        node:
+          - 18
+          - 20
+          - 22
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build project
+        run: npm run build
+
+  package-smoke-ubuntu:
+    name: package-smoke (ubuntu-latest, Node 22)
     runs-on: ubuntu-latest
 
     steps:
@@ -23,14 +57,49 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests
-        run: npm test
-
-      - name: Build project
-        run: npm run build
-
       - name: Check package contents
         run: npm run check:pack
 
       - name: Smoke test packaged install
+        run: npm run smoke:package
+
+  package-smoke-windows-unicode:
+    name: package-smoke (windows-latest, Node 22, non-ASCII path)
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Prepare non-ASCII workspace copy
+        id: workspace
+        shell: pwsh
+        run: |
+          $segment = Get-Content '.github/workflows/windows-non-ascii-segment.txt' -Encoding utf8 | Select-Object -First 1
+          $repoPath = Join-Path $env:RUNNER_TEMP $segment
+          if (Test-Path $repoPath) {
+            Remove-Item $repoPath -Recurse -Force
+          }
+          New-Item -ItemType Directory -Path $repoPath | Out-Null
+          Get-ChildItem -LiteralPath $env:GITHUB_WORKSPACE -Force | ForEach-Object {
+            Copy-Item -LiteralPath $_.FullName -Destination $repoPath -Recurse -Force
+          }
+          "repo_path=$repoPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Install dependencies
+        working-directory: ${{ steps.workspace.outputs.repo_path }}
+        run: npm ci
+
+      - name: Check package contents
+        working-directory: ${{ steps.workspace.outputs.repo_path }}
+        run: npm run check:pack
+
+      - name: Smoke test packaged install
+        working-directory: ${{ steps.workspace.outputs.repo_path }}
         run: npm run smoke:package

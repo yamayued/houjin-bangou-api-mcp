@@ -628,6 +628,12 @@ Pull requests are expected to pass CI:
 - `npm test`
 - `npm run build`
 
+Current GitHub Actions coverage:
+
+- Ubuntu and Windows test/build on Node.js 18, 20, and 22
+- packaged install smoke tests on Ubuntu
+- packaged install smoke tests on Windows from a non-ASCII workspace path
+
 ## Security
 
 - Keep your application ID out of Git history, screenshots, and issue reports.
