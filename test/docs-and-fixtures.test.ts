@@ -21,6 +21,9 @@ const SONY_GROUP_NAME = "\u30bd\u30cb\u30fc\u30b0\u30eb\u30fc\u30d7";
 test("README documents first-time setup, verification, package imports, and readable examples", () => {
   const readme = readFileSync(README_PATH, "utf8");
 
+  assert.ok(readme.includes("## 日本語"));
+  assert.ok(readme.includes("国税庁の法人番号公表サイト Web-API"));
+  assert.ok(readme.includes("npm run verify:live"));
   assert.ok(readme.includes("$env:HOUJIN_BANGOU_API_APPLICATION_ID = \"YOUR_APPLICATION_ID\""));
   assert.ok(readme.includes(`"name": "${NATIONAL_TAX_AGENCY_NAME}"`));
   assert.ok(readme.includes(`{ "name": "${NINTENDO_NAME}" }`));
@@ -33,7 +36,6 @@ test("README documents first-time setup, verification, package imports, and read
   assert.ok(readme.includes("invoice-webapi@nta.go.jp"));
   assert.ok(readme.includes("## Structured Response Fields"));
   assert.ok(readme.includes("## Pagination"));
-  assert.ok(readme.includes("npm run verify:live"));
   assert.ok(readme.includes("Windows installs work even when the repository path contains non-ASCII characters"));
   assert.ok(!readme.includes('"lastUpdateDate": "2026-03-11"'));
 });

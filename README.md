@@ -8,6 +8,29 @@ MCP server for the Japan National Tax Agency Corporate Number API.
 This project wraps the official Corporate Number Publication Site Web-API and exposes it as MCP
 tools for local AI clients.
 
+## 日本語
+
+`houjin-bangou-api-mcp` は、国税庁の法人番号公表サイト Web-API を MCP から使いやすくするための
+軽量サーバーです。
+
+できること:
+
+- 法人番号で法人情報を取得する
+- 法人名で検索する
+- 更新差分を期間指定で取得する
+- XML / UTF-8 CSV / Shift-JIS CSV を扱う
+- MCP クライアントからそのまま使える形で返す
+
+最短の使い方:
+
+1. `npm install`
+2. `HOUJIN_BANGOU_API_APPLICATION_ID` を設定する
+3. `npm run build`
+4. MCP host から `dist/server.js` を起動する
+5. `npm run verify:live` でまとめて確認する
+
+詳細なセットアップ、入力制約、レスポンス形式、検証方法はこの README の後半に英語でまとめています。
+
 ## Why this exists
 
 The National Tax Agency already provides an official API, but using it from LLM tools still
