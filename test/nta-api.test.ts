@@ -81,6 +81,28 @@ test("HoujinBangouApiClient builds the number endpoint request", async () => {
   assert.equal(result.corporations[0]?.name, "国税庁");
 });
 
+test("HoujinBangouApiClient builds the number endpoint request for multiple numbers", async () => {
+  let capturedUrl = "";
+
+  const client = new HoujinBangouApiClient(
+    "example-id",
+    async (input) => {
+      capturedUrl = String(input);
+      return new Response(emptyDiffXml, { status: 200 });
+    },
+    "https://example.test/4",
+  );
+
+  await client.getCorporationByNumber({
+    corporateNumbers: ["7000012050002", "1130001011420"],
+  });
+
+  assert.match(
+    capturedUrl,
+    /^https:\/\/example\.test\/4\/num\?number=7000012050002%2C1130001011420&history=0&type=12&id=example-id$/,
+  );
+});
+
 test("HoujinBangouApiClient builds the name endpoint request", async () => {
   let capturedUrl = "";
 
@@ -93,11 +115,22 @@ test("HoujinBangouApiClient builds the name endpoint request", async () => {
     "https://example.test/4",
   );
 
-  await client.searchCorporationsByName({ name: " 国税 " });
+  await client.searchCorporationsByName({
+    name: " 国税 ",
+    mode: 2,
+    target: 3,
+    address: "13",
+    kinds: ["01", "03"],
+    change: true,
+    close: false,
+    assignmentFrom: "2026-03-01",
+    assignmentTo: "2026-03-10",
+    divide: 2,
+  });
 
   assert.match(
     capturedUrl,
-    /^https:\/\/example\.test\/4\/name\?name=%E5%9B%BD%E7%A8%8E&type=12&id=example-id$/,
+    /^https:\/\/example\.test\/4\/name\?name=%E5%9B%BD%E7%A8%8E&type=12&mode=2&target=3&address=13&kind=01%2C03&change=1&close=0&from=2026-03-01&to=2026-03-10&divide=2&id=example-id$/,
   );
 });
 
@@ -116,11 +149,14 @@ test("HoujinBangouApiClient builds the diff endpoint request", async () => {
   await client.getCorporationUpdates({
     from: " 2026-03-01 ",
     to: " 2026-03-02 ",
+    address: "13101",
+    kinds: ["02"],
+    divide: 3,
   });
 
   assert.match(
     capturedUrl,
-    /^https:\/\/example\.test\/4\/diff\?from=2026-03-01&to=2026-03-02&type=12&id=example-id$/,
+    /^https:\/\/example\.test\/4\/diff\?from=2026-03-01&to=2026-03-02&type=12&address=13101&kind=02&divide=3&id=example-id$/,
   );
 });
 

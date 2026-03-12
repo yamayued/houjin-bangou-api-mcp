@@ -44,15 +44,28 @@ export interface CorporationListResponse {
 }
 
 export interface GetCorporationByNumberParams {
-  corporateNumber: string;
+  corporateNumber?: string;
+  corporateNumbers?: string[];
   history?: boolean;
 }
 
 export interface SearchCorporationsByNameParams {
   name: string;
+  mode?: 1 | 2;
+  target?: 1 | 2 | 3;
+  address?: string;
+  kinds?: Array<"01" | "02" | "03" | "04">;
+  change?: boolean;
+  close?: boolean;
+  assignmentFrom?: string;
+  assignmentTo?: string;
+  divide?: number;
 }
 
 export interface GetCorporationUpdatesParams {
   from: string;
   to: string;
+  address?: string;
+  kinds?: Array<"01" | "02" | "03" | "04">;
+  divide?: number;
 }

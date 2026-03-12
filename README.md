@@ -77,6 +77,7 @@ npm start
 Inputs:
 
 - `corporateNumber`: 13-digit corporate number
+- `corporateNumbers`: optional array of up to 10 corporate numbers
 - `history`: optional boolean to include historical records
 
 ### `search_corporations_by_name`
@@ -84,6 +85,15 @@ Inputs:
 Inputs:
 
 - `name`: corporation or organization name
+- `mode`: optional search mode, `1` prefix or `2` partial match
+- `target`: optional target, `1` name, `2` furigana, `3` both
+- `address`: optional 2-digit prefecture code or 5-digit city code
+- `kinds`: optional array of corporation kind filters: `01`, `02`, `03`, `04`
+- `change`: optional boolean to include changed records
+- `close`: optional boolean to include closed corporations
+- `assignmentFrom`: optional assignment date lower bound in `YYYY-MM-DD`
+- `assignmentTo`: optional assignment date upper bound in `YYYY-MM-DD`
+- `divide`: optional page number for paginated API results
 
 ### `get_corporation_updates`
 
@@ -91,6 +101,9 @@ Inputs:
 
 - `from`: start date in `YYYY-MM-DD`
 - `to`: end date in `YYYY-MM-DD`
+- `address`: optional 2-digit prefecture code or 5-digit city code
+- `kinds`: optional array of corporation kind filters: `01`, `02`, `03`, `04`
+- `divide`: optional page number for paginated API results
 
 ## Example MCP configuration
 
@@ -148,6 +161,12 @@ Manual real-company check:
 
 ```bash
 npm run check:companies
+```
+
+Advanced filter check:
+
+```bash
+npm run check:advanced-filters
 ```
 
 This repository currently focuses on the stdio MCP server. HTTP transport, richer filtering, and

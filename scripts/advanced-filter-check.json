@@ -1,0 +1,29 @@
+{
+  "multiNumberQuery": [
+    "7000012050002",
+    "1130001011420"
+  ],
+  "nameSearch": {
+    "name": "国税",
+    "mode": 2,
+    "target": 1,
+    "address": "13",
+    "kinds": [
+      "01"
+    ],
+    "change": false,
+    "close": false,
+    "assignmentFrom": "2015-10-05",
+    "assignmentTo": "2015-10-10",
+    "divide": 1
+  },
+  "diffSearch": {
+    "from": "2026-03-01",
+    "to": "2026-03-11",
+    "address": "13",
+    "kinds": [
+      "01"
+    ],
+    "divide": 1
+  }
+}

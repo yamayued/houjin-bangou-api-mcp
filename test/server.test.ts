@@ -94,3 +94,93 @@ test("server rejects impossible calendar dates", async () => {
     );
   });
 });
+
+test("server rejects using both corporateNumber and corporateNumbers", async () => {
+  await withClient(async (client) => {
+    const result = await client.callTool({
+      name: "get_corporation_by_number",
+      arguments: {
+        corporateNumber: "7000012050002",
+        corporateNumbers: ["1130001011420"],
+      },
+    });
+
+    assert.equal(result.isError, true);
+    assert.match(
+      result.content[0]?.type === "text" ? result.content[0].text : "",
+      /Use either corporateNumber or corporateNumbers, not both\./,
+    );
+  });
+});
+
+test("server rejects invalid address filters", async () => {
+  await withClient(async (client) => {
+    const result = await client.callTool({
+      name: "search_corporations_by_name",
+      arguments: {
+        name: "国税",
+        address: "1",
+      },
+    });
+
+    assert.equal(result.isError, true);
+    assert.match(
+      result.content[0]?.type === "text" ? result.content[0].text : "",
+      /address must be a 2-digit prefecture code or 5-digit city code\./,
+    );
+  });
+});
+
+test("server rejects assignment dates before the supported minimum", async () => {
+  await withClient(async (client) => {
+    const result = await client.callTool({
+      name: "search_corporations_by_name",
+      arguments: {
+        name: "国税",
+        assignmentFrom: "2015-10-01",
+      },
+    });
+
+    assert.equal(result.isError, true);
+    assert.match(
+      result.content[0]?.type === "text" ? result.content[0].text : "",
+      /assignmentFrom must be on or after 2015-10-05\./,
+    );
+  });
+});
+
+test("server rejects diff ranges older than the supported minimum", async () => {
+  await withClient(async (client) => {
+    const result = await client.callTool({
+      name: "get_corporation_updates",
+      arguments: {
+        from: "2015-11-30",
+        to: "2015-12-01",
+      },
+    });
+
+    assert.equal(result.isError, true);
+    assert.match(
+      result.content[0]?.type === "text" ? result.content[0].text : "",
+      /from must be on or after 2015-12-01\./,
+    );
+  });
+});
+
+test("server rejects diff ranges longer than 50 days", async () => {
+  await withClient(async (client) => {
+    const result = await client.callTool({
+      name: "get_corporation_updates",
+      arguments: {
+        from: "2026-01-01",
+        to: "2026-02-20",
+      },
+    });
+
+    assert.equal(result.isError, true);
+    assert.match(
+      result.content[0]?.type === "text" ? result.content[0].text : "",
+      /from and to must be within 50 days\./,
+    );
+  });
+});
