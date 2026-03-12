@@ -4,6 +4,8 @@ import assert from "node:assert/strict";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 
+const NATIONAL_TAX_AGENCY_NAME = "\u56fd\u7a0e\u5e81";
+
 async function withClient<T>(run: (client: Client) => Promise<T>): Promise<T> {
   const transport = new StdioClientTransport({
     command: process.execPath,
@@ -118,7 +120,7 @@ test("server rejects invalid address filters", async () => {
     const result = await client.callTool({
       name: "search_corporations_by_name",
       arguments: {
-        name: "国税",
+        name: NATIONAL_TAX_AGENCY_NAME,
         address: "1",
       },
     });
@@ -136,7 +138,7 @@ test("server rejects assignment dates before the supported minimum", async () =>
     const result = await client.callTool({
       name: "search_corporations_by_name",
       arguments: {
-        name: "国税",
+        name: NATIONAL_TAX_AGENCY_NAME,
         assignmentFrom: "2015-10-01",
       },
     });

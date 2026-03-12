@@ -152,12 +152,12 @@ Arguments:
 }
 ```
 
-Expected result when `responseType` is omitted:
+Illustrative result shape when `responseType` is omitted:
 
 ```json
 {
   "metadata": {
-    "lastUpdateDate": "2026-03-11",
+    "lastUpdateDate": "YYYY-MM-DD",
     "count": 1,
     "divideNumber": 1,
     "divideSize": 1
@@ -175,7 +175,7 @@ Expected result when `responseType` is omitted:
 Once that works, try:
 
 - `search_corporations_by_name` with `{ "name": "任天堂株式会社" }`
-- `get_corporation_updates` with `{ "from": "2026-03-01", "to": "2026-03-05" }`
+- `get_corporation_updates` with a recent date window such as `{ "from": "YYYY-MM-DD", "to": "YYYY-MM-DD" }`
 - `get_corporation_by_number` with `responseType: "02"` or `responseType: "01"`
 
 ## Run
@@ -260,10 +260,12 @@ The official API `type` switch is exposed through `responseType`.
 
 ### Structured example: `responseType: "12"`
 
+This example shows the shape of a successful response, not a fixed live snapshot.
+
 ```json
 {
   "metadata": {
-    "lastUpdateDate": "2026-03-11",
+    "lastUpdateDate": "YYYY-MM-DD",
     "count": 1,
     "divideNumber": 1,
     "divideSize": 1
@@ -286,7 +288,7 @@ The official API `type` switch is exposed through `responseType`.
 {
   "responseType": "02",
   "contentType": "text/csv;charset=UTF-8",
-  "raw": "2026-03-11,1,1,1\n1,7000012050002,01,1,2018-04-02,2015-10-05,\"国税庁\",..."
+  "raw": "YYYY-MM-DD,1,1,1\n1,7000012050002,01,1,2018-04-02,2015-10-05,\"国税庁\",..."
 }
 ```
 

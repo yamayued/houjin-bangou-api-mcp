@@ -8,6 +8,8 @@ type Input = {
   corporateNumber: string;
 };
 
+const NATIONAL_TAX_AGENCY_NAME = "\u56fd\u7a0e\u5e81";
+
 function summarizeStructuredResponse(result: CorporationListResponse) {
   return {
     count: result.metadata.count,
@@ -67,7 +69,7 @@ assertCondition(
   "raw" in shiftJisCsvResult &&
     shiftJisCsvResult.responseType === "01" &&
     shiftJisCsvResult.raw.includes(input.corporateNumber) &&
-    shiftJisCsvResult.raw.includes("国税庁"),
+    shiftJisCsvResult.raw.includes(NATIONAL_TAX_AGENCY_NAME),
   "response-type-check failed: Shift-JIS CSV response was not decoded into readable Japanese text.",
 );
 
