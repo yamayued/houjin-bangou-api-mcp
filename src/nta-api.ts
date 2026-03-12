@@ -12,6 +12,7 @@ import { parseCorporationListXml } from "./xml.js";
 const DEFAULT_BASE_URL = "https://api.houjin-bangou.nta.go.jp/4";
 const DEFAULT_RESPONSE_TYPE: ApiResponseType = "12";
 const CORPORATION_KIND_DELIMITER = ",";
+const SHIFT_JIS_RESPONSE_TYPE: ApiResponseType = "01";
 
 function appendOptionalParam(params: URLSearchParams, key: string, value: string | number | null | undefined): void {
   if (value === null || value === undefined) {
@@ -68,6 +69,33 @@ function buildRawResponse(
     contentType,
     raw: body,
   };
+}
+
+function getDecoderLabel(responseType: ApiResponseType, contentType: string | null): string {
+  const charset = contentType?.match(/charset=([^;]+)/i)?.[1]?.trim().toLowerCase();
+
+  if (charset === "shift_jis" || charset === "shift-jis") {
+    return "shift_jis";
+  }
+
+  if (charset === "utf-8" || charset === "utf8") {
+    return "utf-8";
+  }
+
+  if (responseType === SHIFT_JIS_RESPONSE_TYPE) {
+    return "shift_jis";
+  }
+
+  return "utf-8";
+}
+
+function decodeResponseBody(
+  responseType: ApiResponseType,
+  contentType: string | null,
+  buffer: ArrayBuffer,
+): string {
+  const decoder = new TextDecoder(getDecoderLabel(responseType, contentType));
+  return decoder.decode(buffer);
 }
 
 export class HoujinBangouApiClient {
@@ -144,7 +172,8 @@ export class HoujinBangouApiClient {
       },
     });
 
-    const body = await response.text();
+    const contentType = response.headers.get("content-type");
+    const body = decodeResponseBody(responseType, contentType, await response.arrayBuffer());
     if (!response.ok) {
       throw new Error(formatApiError(response.status, body));
     }
@@ -153,7 +182,7 @@ export class HoujinBangouApiClient {
       return parseCorporationListXml(body);
     }
 
-    return buildRawResponse(responseType, body, response.headers.get("content-type"));
+    return buildRawResponse(responseType, body, contentType);
   }
 }
 

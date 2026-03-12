@@ -106,13 +106,18 @@ test("HoujinBangouApiClient builds the number endpoint request for multiple numb
 test("HoujinBangouApiClient returns raw CSV when responseType is 01", async () => {
   let capturedUrl = "";
   let capturedAccept = "";
+  const shiftJisCsv = Buffer.concat([
+    Buffer.from("header\n\""),
+    Buffer.from([0x8d, 0x91, 0x90, 0xc5, 0x92, 0xa1]),
+    Buffer.from("\"\n"),
+  ]);
 
   const client = new HoujinBangouApiClient(
     "example-id",
     async (input, init) => {
       capturedUrl = String(input);
       capturedAccept = String((init?.headers as Record<string, string> | undefined)?.Accept ?? "");
-      return new Response("corporateNumber,name\n7000012050002,National Tax Agency\n", {
+      return new Response(shiftJisCsv, {
         status: 200,
         headers: {
           "Content-Type": "text/csv; charset=Shift_JIS",
@@ -135,7 +140,7 @@ test("HoujinBangouApiClient returns raw CSV when responseType is 01", async () =
   assert.deepEqual(result, {
     responseType: "01",
     contentType: "text/csv; charset=Shift_JIS",
-    raw: "corporateNumber,name\n7000012050002,National Tax Agency\n",
+    raw: "header\n\"国税庁\"\n",
   });
 });
 
