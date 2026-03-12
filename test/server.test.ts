@@ -184,3 +184,21 @@ test("server rejects diff ranges longer than 50 days", async () => {
     );
   });
 });
+
+test("server rejects unsupported response types", async () => {
+  await withClient(async (client) => {
+    const result = await client.callTool({
+      name: "get_corporation_by_number",
+      arguments: {
+        corporateNumber: "7000012050002",
+        responseType: "99",
+      },
+    });
+
+    assert.equal(result.isError, true);
+    assert.match(
+      result.content[0]?.type === "text" ? result.content[0].text : "",
+      /Invalid input/,
+    );
+  });
+});

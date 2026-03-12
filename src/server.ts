@@ -49,6 +49,10 @@ const DIFF_MAX_RANGE_DAYS = 50;
 async function main(): Promise<void> {
   const applicationId = getApplicationIdFromEnv();
   const apiClient = new HoujinBangouApiClient(applicationId);
+  const responseTypeField = z
+    .union([z.literal("01"), z.literal("02"), z.literal("12")])
+    .optional()
+    .describe("Response format: 01 CSV (Shift-JIS), 02 CSV (UTF-8/Unicode), 12 XML.");
   const kindEnum = z.enum(["01", "02", "03", "04"]);
   const addressCodeInput = z
     .string()
@@ -81,6 +85,7 @@ async function main(): Promise<void> {
         .boolean()
         .optional()
         .describe("Include historical records when true."),
+      responseType: responseTypeField,
     })
     .refine(({ corporateNumber, corporateNumbers }) => {
       const singleCount = corporateNumber ? 1 : 0;
@@ -97,6 +102,7 @@ async function main(): Promise<void> {
   const corporationNameInput = z
     .object({
       name: z.string().trim().min(1, "name is required."),
+      responseType: responseTypeField,
       mode: z
         .union([z.literal(1), z.literal(2)])
         .optional()
@@ -150,6 +156,7 @@ async function main(): Promise<void> {
         .trim()
         .regex(/^\d{4}-\d{2}-\d{2}$/, "to must be YYYY-MM-DD.")
         .refine(isValidIsoDate, "to must be a real calendar date."),
+      responseType: responseTypeField,
       address: addressCodeInput.optional(),
       kinds: z.array(kindEnum).min(1, "kinds must not be empty.").optional(),
       divide: divideField.optional(),
@@ -183,12 +190,13 @@ async function main(): Promise<void> {
       description: "Fetch corporation details from the National Tax Agency Corporate Number API.",
       inputSchema: corporateNumberInput,
     },
-    async ({ corporateNumber, corporateNumbers, history }) => {
+    async ({ corporateNumber, corporateNumbers, history, responseType }) => {
       try {
         const result = await apiClient.getCorporationByNumber({
           corporateNumber,
           corporateNumbers,
           history,
+          responseType,
         });
 
         return {
@@ -220,10 +228,11 @@ async function main(): Promise<void> {
       description: "Search corporations by name using the official Corporate Number API.",
       inputSchema: corporationNameInput,
     },
-    async ({ name, mode, target, address, kinds, change, close, assignmentFrom, assignmentTo, divide }) => {
+    async ({ name, responseType, mode, target, address, kinds, change, close, assignmentFrom, assignmentTo, divide }) => {
       try {
         const result = await apiClient.searchCorporationsByName({
           name,
+          responseType,
           mode,
           target,
           address,
@@ -264,11 +273,12 @@ async function main(): Promise<void> {
       description: "Fetch corporations updated within a date range from the Corporate Number API.",
       inputSchema: updateRangeInput,
     },
-    async ({ from, to, address, kinds, divide }) => {
+    async ({ from, to, responseType, address, kinds, divide }) => {
       try {
         const result = await apiClient.getCorporationUpdates({
           from,
           to,
+          responseType,
           address,
           kinds,
           divide,

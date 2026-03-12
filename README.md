@@ -27,6 +27,7 @@ requires a thin integration layer. This repository aims to be that layer:
 - Filter name searches by mode, target, address, kind, change status, close status, assignment date, and page
 - Fetch updates within a date range
 - Filter update searches by address, kind, and page
+- Support the official response formats: CSV (Shift-JIS), CSV (Unicode), and XML
 - Return normalized JSON-style output from the official XML API
 
 ## Coverage
@@ -38,9 +39,11 @@ documented request conditions for its three core endpoints:
 - `/name`
 - `/diff`
 
-In MCP form, responses are always returned as structured JSON-style data. The raw API `type`
-switch is therefore not exposed as a tool input, because MCP clients consume the normalized
-structured output instead of raw CSV or XML payload variants.
+The API `type` switch is also exposed:
+
+- `12`: XML, returned by this MCP as normalized structured JSON-style data
+- `02`: Unicode CSV, returned by this MCP as raw text payload
+- `01`: Shift-JIS CSV, returned by this MCP as raw text payload
 
 ## Requirements
 
@@ -96,6 +99,7 @@ Inputs:
 - `corporateNumber`: 13-digit corporate number
 - `corporateNumbers`: optional array of up to 10 corporate numbers
 - `history`: optional boolean to include historical records
+- `responseType`: optional response type, `12` XML, `02` Unicode CSV, `01` Shift-JIS CSV
 
 ### `search_corporations_by_name`
 
@@ -103,6 +107,7 @@ Inputs:
 
 - `name`: corporation or organization name
 - `mode`: optional search mode, `1` prefix or `2` partial match
+- `responseType`: optional response type, `12` XML, `02` Unicode CSV, `01` Shift-JIS CSV
 - `target`: optional target, `1` name, `2` furigana, `3` both
 - `address`: optional 2-digit prefecture code or 5-digit city code
 - `kinds`: optional array of corporation kind filters: `01`, `02`, `03`, `04`
@@ -118,6 +123,7 @@ Inputs:
 
 - `from`: start date in `YYYY-MM-DD`
 - `to`: end date in `YYYY-MM-DD`
+- `responseType`: optional response type, `12` XML, `02` Unicode CSV, `01` Shift-JIS CSV
 - `address`: optional 2-digit prefecture code or 5-digit city code
 - `kinds`: optional array of corporation kind filters: `01`, `02`, `03`, `04`
 - `divide`: optional page number for paginated API results

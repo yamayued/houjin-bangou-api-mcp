@@ -103,6 +103,42 @@ test("HoujinBangouApiClient builds the number endpoint request for multiple numb
   );
 });
 
+test("HoujinBangouApiClient returns raw CSV when responseType is 01", async () => {
+  let capturedUrl = "";
+  let capturedAccept = "";
+
+  const client = new HoujinBangouApiClient(
+    "example-id",
+    async (input, init) => {
+      capturedUrl = String(input);
+      capturedAccept = String((init?.headers as Record<string, string> | undefined)?.Accept ?? "");
+      return new Response("corporateNumber,name\n7000012050002,National Tax Agency\n", {
+        status: 200,
+        headers: {
+          "Content-Type": "text/csv; charset=Shift_JIS",
+        },
+      });
+    },
+    "https://example.test/4",
+  );
+
+  const result = await client.getCorporationByNumber({
+    corporateNumber: "7000012050002",
+    responseType: "01",
+  });
+
+  assert.match(
+    capturedUrl,
+    /^https:\/\/example\.test\/4\/num\?number=7000012050002&history=0&type=01&id=example-id$/,
+  );
+  assert.equal(capturedAccept, "text/csv");
+  assert.deepEqual(result, {
+    responseType: "01",
+    contentType: "text/csv; charset=Shift_JIS",
+    raw: "corporateNumber,name\n7000012050002,National Tax Agency\n",
+  });
+});
+
 test("HoujinBangouApiClient builds the name endpoint request", async () => {
   let capturedUrl = "";
 
@@ -158,6 +194,40 @@ test("HoujinBangouApiClient builds the diff endpoint request", async () => {
     capturedUrl,
     /^https:\/\/example\.test\/4\/diff\?from=2026-03-01&to=2026-03-02&type=12&address=13101&kind=02&divide=3&id=example-id$/,
   );
+});
+
+test("HoujinBangouApiClient can request Unicode CSV for diff responses", async () => {
+  let capturedUrl = "";
+
+  const client = new HoujinBangouApiClient(
+    "example-id",
+    async (input) => {
+      capturedUrl = String(input);
+      return new Response("corporateNumber,name\n7000012050002,National Tax Agency\n", {
+        status: 200,
+        headers: {
+          "Content-Type": "text/csv; charset=UTF-8",
+        },
+      });
+    },
+    "https://example.test/4",
+  );
+
+  const result = await client.getCorporationUpdates({
+    from: "2026-03-01",
+    to: "2026-03-02",
+    responseType: "02",
+  });
+
+  assert.match(
+    capturedUrl,
+    /^https:\/\/example\.test\/4\/diff\?from=2026-03-01&to=2026-03-02&type=02&id=example-id$/,
+  );
+  assert.deepEqual(result, {
+    responseType: "02",
+    contentType: "text/csv; charset=UTF-8",
+    raw: "corporateNumber,name\n7000012050002,National Tax Agency\n",
+  });
 });
 
 test("HoujinBangouApiClient builds a clearer API error message", async () => {

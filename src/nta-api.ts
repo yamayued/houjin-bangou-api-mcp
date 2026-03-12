@@ -1,13 +1,16 @@
 import type {
+  ApiResponseType,
+  CorporationApiResponse,
   CorporationListResponse,
   GetCorporationByNumberParams,
   GetCorporationUpdatesParams,
+  RawCorporationApiResponse,
   SearchCorporationsByNameParams,
 } from "./types.js";
 import { parseCorporationListXml } from "./xml.js";
 
 const DEFAULT_BASE_URL = "https://api.houjin-bangou.nta.go.jp/4";
-const DEFAULT_RESPONSE_TYPE = "12";
+const DEFAULT_RESPONSE_TYPE: ApiResponseType = "12";
 const CORPORATION_KIND_DELIMITER = ",";
 
 function appendOptionalParam(params: URLSearchParams, key: string, value: string | number | null | undefined): void {
@@ -51,6 +54,22 @@ function formatApiError(status: number, body: string): string {
   return `Corporate Number API request failed with ${status}: ${trimmedBody}`;
 }
 
+function resolveResponseType(value: ApiResponseType | undefined): ApiResponseType {
+  return value ?? DEFAULT_RESPONSE_TYPE;
+}
+
+function buildRawResponse(
+  responseType: Exclude<ApiResponseType, "12">,
+  body: string,
+  contentType: string | null,
+): RawCorporationApiResponse {
+  return {
+    responseType,
+    contentType,
+    raw: body,
+  };
+}
+
 export class HoujinBangouApiClient {
   constructor(
     private readonly applicationId: string,
@@ -60,25 +79,27 @@ export class HoujinBangouApiClient {
 
   async getCorporationByNumber(
     params: GetCorporationByNumberParams,
-  ): Promise<CorporationListResponse> {
+  ): Promise<CorporationApiResponse> {
     const numbers =
       params.corporateNumbers?.map((value) => value.trim()).filter((value) => value.length > 0) ??
       (params.corporateNumber ? [params.corporateNumber.trim()] : []);
+    const responseType = resolveResponseType(params.responseType);
     const query = new URLSearchParams({
       number: numbers.join(","),
       history: params.history ? "1" : "0",
-      type: DEFAULT_RESPONSE_TYPE,
+      type: responseType,
     });
 
-    return this.requestXml("/num", query);
+    return this.request("/num", query, responseType);
   }
 
   async searchCorporationsByName(
     params: SearchCorporationsByNameParams,
-  ): Promise<CorporationListResponse> {
+  ): Promise<CorporationApiResponse> {
+    const responseType = resolveResponseType(params.responseType);
     const query = new URLSearchParams({
       name: params.name.trim(),
-      type: DEFAULT_RESPONSE_TYPE,
+      type: responseType,
     });
     appendOptionalParam(query, "mode", params.mode);
     appendOptionalParam(query, "target", params.target);
@@ -90,31 +111,36 @@ export class HoujinBangouApiClient {
     appendOptionalParam(query, "to", params.assignmentTo);
     appendOptionalParam(query, "divide", params.divide);
 
-    return this.requestXml("/name", query);
+    return this.request("/name", query, responseType);
   }
 
   async getCorporationUpdates(
     params: GetCorporationUpdatesParams,
-  ): Promise<CorporationListResponse> {
+  ): Promise<CorporationApiResponse> {
+    const responseType = resolveResponseType(params.responseType);
     const query = new URLSearchParams({
       from: params.from.trim(),
       to: params.to.trim(),
-      type: DEFAULT_RESPONSE_TYPE,
+      type: responseType,
     });
     appendOptionalParam(query, "address", params.address);
     appendKinds(query, params.kinds);
     appendOptionalParam(query, "divide", params.divide);
 
-    return this.requestXml("/diff", query);
+    return this.request("/diff", query, responseType);
   }
 
-  private async requestXml(path: string, params: URLSearchParams): Promise<CorporationListResponse> {
+  private async request(
+    path: string,
+    params: URLSearchParams,
+    responseType: ApiResponseType,
+  ): Promise<CorporationApiResponse> {
     params.set("id", this.applicationId);
 
     const url = `${this.baseUrl}${path}?${params.toString()}`;
     const response = await this.fetchImpl(url, {
       headers: {
-        Accept: "application/xml",
+        Accept: responseType === "12" ? "application/xml" : "text/csv",
       },
     });
 
@@ -123,7 +149,11 @@ export class HoujinBangouApiClient {
       throw new Error(formatApiError(response.status, body));
     }
 
-    return parseCorporationListXml(body);
+    if (responseType === "12") {
+      return parseCorporationListXml(body);
+    }
+
+    return buildRawResponse(responseType, body, response.headers.get("content-type"));
   }
 }
 
