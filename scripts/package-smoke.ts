@@ -111,6 +111,48 @@ try {
     const output = run(process.execPath, [smokeScriptPath], tempDir);
     process.stdout.write(output);
 
+    const importSmokeScriptPath = join(tempDir, "package-import-smoke.mjs");
+    writeFileSync(
+      importSmokeScriptPath,
+      [
+        'const rootModule = await import("houjin-bangou-api-mcp");',
+        'const ntaApiModule = await import("houjin-bangou-api-mcp/nta-api");',
+        'const xmlModule = await import("houjin-bangou-api-mcp/xml");',
+        'const typesModule = await import("houjin-bangou-api-mcp/types");',
+        "",
+        "const rootKeys = Object.keys(rootModule).sort();",
+        "const ntaApiKeys = Object.keys(ntaApiModule).sort();",
+        "const xmlKeys = Object.keys(xmlModule).sort();",
+        "const typesKeys = Object.keys(typesModule).sort();",
+        "",
+        "for (const key of [\"HoujinBangouApiClient\", \"formatApiError\", \"getApplicationIdFromEnv\", \"parseCorporationListXml\"]) {",
+        "  if (!rootKeys.includes(key)) {",
+        '    throw new Error(`Missing root export: ${key}`);',
+        "  }",
+        "}",
+        "",
+        "if (!ntaApiKeys.includes(\"HoujinBangouApiClient\")) {",
+        '  throw new Error("nta-api subpath did not export HoujinBangouApiClient.");',
+        "}",
+        "",
+        "if (!xmlKeys.includes(\"parseCorporationListXml\")) {",
+        '  throw new Error("xml subpath did not export parseCorporationListXml.");',
+        "}",
+        "",
+        "console.log(JSON.stringify({ rootKeys, ntaApiKeys, xmlKeys, typesKeys }, null, 2));",
+      ].join("\n"),
+      "utf8",
+    );
+    const importOutput = run(
+      process.execPath,
+      [importSmokeScriptPath],
+      tempDir,
+      Object.fromEntries(
+        Object.entries(process.env).filter(([key]) => key !== "HOUJIN_BANGOU_API_APPLICATION_ID"),
+      ),
+    );
+    process.stdout.write(importOutput);
+
     const envWithoutAppId = Object.fromEntries(
       Object.entries(process.env).filter(([key]) => key !== "HOUJIN_BANGOU_API_APPLICATION_ID"),
     );

@@ -3,9 +3,26 @@
   "version": "0.1.0",
   "description": "MCP server for the Japan National Tax Agency Corporate Number API.",
   "type": "module",
-  "main": "dist/server.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
-    ".": "./dist/server.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./nta-api": {
+      "types": "./dist/nta-api.d.ts",
+      "import": "./dist/nta-api.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js"
+    },
+    "./xml": {
+      "types": "./dist/xml.d.ts",
+      "import": "./dist/xml.js"
+    },
+    "./package.json": "./package.json"
   },
   "bin": {
     "houjin-bangou-api-mcp": "dist/server.js"

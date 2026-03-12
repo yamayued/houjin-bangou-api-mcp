@@ -268,6 +268,27 @@ npm start
 `npm start` launches a stdio MCP server and waits for a client connection. Seeing no prompt after
 startup is normal.
 
+## Package Imports
+
+The packaged CLI still lives at `dist/server.js`, but importing the package root is now safe and
+side-effect free.
+
+Root import:
+
+```ts
+import { HoujinBangouApiClient, formatApiError, parseCorporationListXml } from "houjin-bangou-api-mcp";
+```
+
+Subpath imports:
+
+```ts
+import { getApplicationIdFromEnv } from "houjin-bangou-api-mcp/nta-api";
+import { parseCorporationListXml } from "houjin-bangou-api-mcp/xml";
+```
+
+This keeps the CLI entrypoint focused on MCP server startup while allowing programmatic reuse of
+the request builder and XML parser.
+
 ## MCP Tools
 
 ### `get_corporation_by_number`
@@ -453,6 +474,7 @@ npm run build
 Expected result:
 
 - `dist/server.js` is generated without TypeScript errors
+- `dist/index.js` is generated for package imports
 
 ### MCP connection check
 
@@ -520,6 +542,7 @@ npm run smoke:package
 Expected result:
 
 - installed package entrypoints expose the three tools
+- package root imports do not start the server or require environment variables
 - missing application ID fails clearly
 - Windows installs work even when the repository path contains non-ASCII characters
 
