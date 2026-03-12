@@ -21,9 +21,26 @@ requires a thin integration layer. This repository aims to be that layer:
 ## Features
 
 - Get a corporation by 13-digit corporate number
+- Get up to 10 corporations in one request
+- Include historical records for corporation number lookups
 - Search corporations by name
+- Filter name searches by mode, target, address, kind, change status, close status, assignment date, and page
 - Fetch updates within a date range
+- Filter update searches by address, kind, and page
 - Return normalized JSON-style output from the official XML API
+
+## Coverage
+
+This MCP server targets the latest supported `Ver.4.0` Corporate Number API and exposes the
+documented request conditions for its three core endpoints:
+
+- `/num`
+- `/name`
+- `/diff`
+
+In MCP form, responses are always returned as structured JSON-style data. The raw API `type`
+switch is therefore not exposed as a tool input, because MCP clients consume the normalized
+structured output instead of raw CSV or XML payload variants.
 
 ## Requirements
 
