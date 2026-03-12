@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 
 import { HoujinBangouApiClient, getApplicationIdFromEnv } from "../dist/nta-api.js";
+import { assertCondition } from "./verification-helpers.ts";
 
 type CompanyCheck = {
   label: string;
@@ -56,4 +57,28 @@ const results = await Promise.all(
   }),
 );
 
+const failures: string[] = [];
+
+for (const result of results) {
+  if (!result.matchedByName) {
+    failures.push(
+      `${result.label}: expected name search to include ${result.expectedCorporateNumber}.`,
+    );
+  }
+
+  if (
+    !result.byNumberLatestStates.some(
+      (corporation) => corporation.corporateNumber === result.expectedCorporateNumber,
+    )
+  ) {
+    failures.push(
+      `${result.label}: direct lookup did not include ${result.expectedCorporateNumber}.`,
+    );
+  }
+}
+
 console.log(JSON.stringify({ checkedAt: new Date().toISOString(), results }, null, 2));
+assertCondition(
+  failures.length === 0,
+  `manual-company-check failed:\n${failures.join("\n")}`,
+);

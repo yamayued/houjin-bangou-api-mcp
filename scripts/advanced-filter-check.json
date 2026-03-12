@@ -4,7 +4,8 @@
     "1130001011420"
   ],
   "nameSearch": {
-    "name": "国税",
+    "name": "\u56fd\u7a0e\u5e81",
+    "expectedCorporateNumber": "7000012050002",
     "mode": 2,
     "target": 1,
     "address": "13",
@@ -18,8 +19,7 @@
     "divide": 1
   },
   "diffSearch": {
-    "from": "2026-03-01",
-    "to": "2026-03-11",
+    "diffDays": 10,
     "address": "13",
     "kinds": [
       "01"

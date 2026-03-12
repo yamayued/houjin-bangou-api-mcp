@@ -2,31 +2,34 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { readFileSync } from "node:fs";
 
+import {
+  assertCondition,
+  extractToolText,
+  getRecentDateRange,
+  parseJsonText,
+} from "./verification-helpers.ts";
+
 type LiveCheckInput = {
   corporateNumber: string;
   name: string;
-  from: string;
-  to: string;
+  expectedName?: string;
+  diffDays?: number;
 };
 
-type TextBlock = {
-  type: "text";
-  text: string;
+type StructuredCorporationResponse = {
+  metadata?: { count?: number };
+  corporations?: Array<{ corporateNumber?: string; name?: string }>;
 };
 
-function isTextBlock(value: unknown): value is TextBlock {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "type" in value &&
-    "text" in value &&
-    (value as { type?: unknown }).type === "text" &&
-    typeof (value as { text?: unknown }).text === "string"
-  );
-}
+const EXPECTED_TOOL_NAMES = [
+  "get_corporation_by_number",
+  "get_corporation_updates",
+  "search_corporations_by_name",
+];
 
 async function main(): Promise<void> {
   const input = JSON.parse(readFileSync("./scripts/live-check.json", "utf8")) as LiveCheckInput;
+  const dateRange = getRecentDateRange(input.diffDays ?? 10);
   const transport = new StdioClientTransport({
     command: "node",
     args: ["dist/server.js"],
@@ -48,6 +51,10 @@ async function main(): Promise<void> {
     await client.connect(transport);
     const toolsResult = await client.listTools();
     const toolNames = toolsResult.tools.map((tool) => tool.name).sort();
+    assertCondition(
+      JSON.stringify(toolNames) === JSON.stringify(EXPECTED_TOOL_NAMES),
+      `Unexpected tool list: ${JSON.stringify(toolNames)}`,
+    );
 
     console.log(JSON.stringify({ toolNames }, null, 2));
 
@@ -67,37 +74,67 @@ async function main(): Promise<void> {
       const updatesResult = await client.callTool({
         name: "get_corporation_updates",
         arguments: {
-          from: input.from,
-          to: input.to,
+          from: dateRange.from,
+          to: dateRange.to,
         },
       });
 
-      const numberText = numberResult.content.find(isTextBlock)?.text ?? "";
-      const nameText = nameResult.content.find(isTextBlock)?.text ?? "";
-      const updatesText = updatesResult.content.find(isTextBlock)?.text ?? "";
-      const numberParsed = JSON.parse(numberText) as {
-        corporations?: Array<{ corporateNumber?: string; name?: string }>;
-      };
-      const nameParsed = JSON.parse(nameText) as {
-        metadata?: { count?: number };
-        corporations?: Array<{ corporateNumber?: string; name?: string }>;
-      };
-      const updatesParsed = JSON.parse(updatesText) as {
-        metadata?: { count?: number };
-      };
+      const numberParsed = parseJsonText<StructuredCorporationResponse>(
+        extractToolText(numberResult, "get_corporation_by_number"),
+        "get_corporation_by_number",
+      );
+      const nameParsed = parseJsonText<StructuredCorporationResponse>(
+        extractToolText(nameResult, "search_corporations_by_name"),
+        "search_corporations_by_name",
+      );
+      const updatesParsed = parseJsonText<StructuredCorporationResponse>(
+        extractToolText(updatesResult, "get_corporation_updates"),
+        "get_corporation_updates",
+      );
+
+      const matchedNumberRecord =
+        numberParsed.corporations?.find(
+          (corporation) => corporation.corporateNumber === input.corporateNumber,
+        ) ?? null;
+      const matchedNameRecord =
+        nameParsed.corporations?.find((corporation) =>
+          input.expectedName
+            ? corporation.name === input.expectedName
+            : corporation.name === input.name,
+        ) ?? null;
+
+      assertCondition(
+        matchedNumberRecord,
+        `get_corporation_by_number did not return ${input.corporateNumber}.`,
+      );
+      assertCondition(
+        (nameParsed.metadata?.count ?? 0) > 0,
+        "search_corporations_by_name returned no records.",
+      );
+      assertCondition(
+        matchedNameRecord,
+        `search_corporations_by_name did not include ${
+          input.expectedName ?? input.name
+        }.`,
+      );
+      assertCondition(
+        typeof updatesParsed.metadata?.count === "number",
+        "get_corporation_updates did not return structured metadata.",
+      );
 
       console.log(
         JSON.stringify(
           {
             liveCheck: {
+              dateRange,
               byNumber: {
-                corporateNumber: numberParsed.corporations?.[0]?.corporateNumber ?? null,
-                name: numberParsed.corporations?.[0]?.name ?? null,
+                corporateNumber: matchedNumberRecord.corporateNumber ?? null,
+                name: matchedNumberRecord.name ?? null,
               },
               byName: {
                 count: nameParsed.metadata?.count ?? null,
-                firstCorporateNumber: nameParsed.corporations?.[0]?.corporateNumber ?? null,
-                firstName: nameParsed.corporations?.[0]?.name ?? null,
+                matchedCorporateNumber: matchedNameRecord.corporateNumber ?? null,
+                matchedName: matchedNameRecord.name ?? null,
               },
               updates: {
                 count: updatesParsed.metadata?.count ?? null,

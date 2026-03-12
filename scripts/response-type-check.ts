@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 
 import { HoujinBangouApiClient, getApplicationIdFromEnv } from "../dist/nta-api.js";
 import type { CorporationListResponse, RawCorporationApiResponse } from "../dist/types.js";
+import { assertCondition } from "./verification-helpers.ts";
 
 type Input = {
   corporateNumber: string;
@@ -48,6 +49,27 @@ const shiftJisCsvResult = await client.getCorporationByNumber({
   corporateNumber: input.corporateNumber,
   responseType: "01",
 });
+
+assertCondition(
+  "corporations" in xmlResult &&
+    xmlResult.corporations.some(
+      (corporation) => corporation.corporateNumber === input.corporateNumber,
+    ),
+  "response-type-check failed: XML response did not include the requested corporate number.",
+);
+assertCondition(
+  "raw" in unicodeCsvResult &&
+    unicodeCsvResult.responseType === "02" &&
+    unicodeCsvResult.raw.includes(input.corporateNumber),
+  "response-type-check failed: Unicode CSV response did not include the requested corporate number.",
+);
+assertCondition(
+  "raw" in shiftJisCsvResult &&
+    shiftJisCsvResult.responseType === "01" &&
+    shiftJisCsvResult.raw.includes(input.corporateNumber) &&
+    shiftJisCsvResult.raw.includes("国税庁"),
+  "response-type-check failed: Shift-JIS CSV response was not decoded into readable Japanese text.",
+);
 
 console.log(
   JSON.stringify(
