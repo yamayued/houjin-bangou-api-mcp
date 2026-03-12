@@ -13,6 +13,7 @@ const DEFAULT_BASE_URL = "https://api.houjin-bangou.nta.go.jp/4";
 const DEFAULT_RESPONSE_TYPE: ApiResponseType = "12";
 const CORPORATION_KIND_DELIMITER = ",";
 const SHIFT_JIS_RESPONSE_TYPE: ApiResponseType = "01";
+const DEFAULT_REQUEST_TIMEOUT_MS = 15_000;
 
 function appendOptionalParam(params: URLSearchParams, key: string, value: string | number | null | undefined): void {
   if (value === null || value === undefined) {
@@ -98,11 +99,16 @@ function decodeResponseBody(
   return decoder.decode(buffer);
 }
 
+function createTimeoutError(timeoutMs: number): Error {
+  return new Error(`Corporate Number API request timed out after ${timeoutMs} ms.`);
+}
+
 export class HoujinBangouApiClient {
   constructor(
     private readonly applicationId: string,
     private readonly fetchImpl: typeof fetch = fetch,
     private readonly baseUrl: string = DEFAULT_BASE_URL,
+    private readonly timeoutMs: number = DEFAULT_REQUEST_TIMEOUT_MS,
   ) {}
 
   async getCorporationByNumber(
@@ -166,23 +172,47 @@ export class HoujinBangouApiClient {
     params.set("id", this.applicationId);
 
     const url = `${this.baseUrl}${path}?${params.toString()}`;
-    const response = await this.fetchImpl(url, {
-      headers: {
-        Accept: responseType === "12" ? "application/xml" : "text/csv",
-      },
-    });
+    const controller = new AbortController();
+    let timeoutId: NodeJS.Timeout | undefined;
 
-    const contentType = response.headers.get("content-type");
-    const body = decodeResponseBody(responseType, contentType, await response.arrayBuffer());
-    if (!response.ok) {
-      throw new Error(formatApiError(response.status, body));
+    try {
+      const response = await Promise.race([
+        this.fetchImpl(url, {
+          headers: {
+            Accept: responseType === "12" ? "application/xml" : "text/csv",
+          },
+          signal: controller.signal,
+        }),
+        new Promise<Response>((_, reject) => {
+          timeoutId = setTimeout(() => {
+            controller.abort();
+            reject(createTimeoutError(this.timeoutMs));
+          }, this.timeoutMs);
+        }),
+      ]);
+
+      const contentType = response.headers.get("content-type");
+      const body = decodeResponseBody(responseType, contentType, await response.arrayBuffer());
+      if (!response.ok) {
+        throw new Error(formatApiError(response.status, body));
+      }
+
+      if (responseType === "12") {
+        return parseCorporationListXml(body, { contentType });
+      }
+
+      return buildRawResponse(responseType, body, contentType);
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        throw createTimeoutError(this.timeoutMs);
+      }
+
+      throw error;
+    } finally {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     }
-
-    if (responseType === "12") {
-      return parseCorporationListXml(body);
-    }
-
-    return buildRawResponse(responseType, body, contentType);
   }
 }
 

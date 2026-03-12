@@ -7,8 +7,12 @@ const parser = new XMLParser({
   parseTagValue: false,
   trimValues: true,
 });
+const BODY_PREVIEW_LENGTH = 160;
 
 type XmlNode = Record<string, unknown>;
+type ParseXmlOptions = {
+  contentType?: string | null;
+};
 
 function asString(value: unknown): string | null {
   if (typeof value !== "string") {
@@ -58,6 +62,57 @@ function asCorporationArray(value: unknown): XmlNode[] {
   return [];
 }
 
+function formatPreview(value: string): string {
+  const normalized = value.replace(/\s+/gu, " ").trim();
+  if (normalized.length <= BODY_PREVIEW_LENGTH) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, BODY_PREVIEW_LENGTH)}...`;
+}
+
+function buildUnexpectedXmlErrorMessage(
+  xml: string,
+  options: ParseXmlOptions,
+  detail?: string,
+): string {
+  const diagnostics: string[] = [];
+
+  if (options.contentType) {
+    diagnostics.push(`content-type: ${options.contentType}`);
+  }
+
+  const preview = formatPreview(xml);
+  if (preview.length > 0) {
+    diagnostics.push(`preview: ${preview}`);
+  }
+
+  if (detail) {
+    diagnostics.push(`detail: ${detail}`);
+  }
+
+  if (diagnostics.length === 0) {
+    return "Unexpected XML response from the Corporate Number API.";
+  }
+
+  return `Unexpected XML response from the Corporate Number API (${diagnostics.join(", ")}).`;
+}
+
+function requireCorporationField(
+  node: XmlNode,
+  fieldName: "corporateNumber" | "name",
+  index: number,
+): string {
+  const value = asString(node[fieldName]);
+  if (value === null) {
+    throw new Error(
+      `Corporation record ${index + 1} is missing required field "${fieldName}".`,
+    );
+  }
+
+  return value;
+}
+
 function parseMetadata(root: XmlNode): CorporationResponseMeta {
   return {
     lastUpdateDate: asString(root.lastUpdateDate),
@@ -67,15 +122,18 @@ function parseMetadata(root: XmlNode): CorporationResponseMeta {
   };
 }
 
-function parseCorporation(node: XmlNode): CorporationRecord {
+function parseCorporation(node: XmlNode, index: number): CorporationRecord {
+  const corporateNumber = requireCorporationField(node, "corporateNumber", index);
+  const name = requireCorporationField(node, "name", index);
+
   return {
     sequenceNumber: asNumber(node.sequenceNumber),
-    corporateNumber: asString(node.corporateNumber) ?? "",
+    corporateNumber,
     process: asString(node.process),
     correct: asBooleanFlag(node.correct),
     updateDate: asString(node.updateDate),
     changeDate: asString(node.changeDate),
-    name: asString(node.name) ?? "",
+    name,
     nameImageId: asString(node.nameImageId),
     kind: asString(node.kind),
     prefectureName: asString(node.prefectureName),
@@ -102,12 +160,28 @@ function parseCorporation(node: XmlNode): CorporationRecord {
   };
 }
 
-export function parseCorporationListXml(xml: string): CorporationListResponse {
-  const parsed = parser.parse(xml) as { corporations?: XmlNode };
+export function parseCorporationListXml(
+  xml: string,
+  options: ParseXmlOptions = {},
+): CorporationListResponse {
+  let parsed: { corporations?: XmlNode };
+
+  try {
+    parsed = parser.parse(xml) as { corporations?: XmlNode };
+  } catch (error) {
+    throw new Error(
+      buildUnexpectedXmlErrorMessage(
+        xml,
+        options,
+        error instanceof Error ? error.message : String(error),
+      ),
+    );
+  }
+
   const root = parsed.corporations;
 
   if (!root || typeof root !== "object") {
-    throw new Error("Unexpected XML response from the Corporate Number API.");
+    throw new Error(buildUnexpectedXmlErrorMessage(xml, options));
   }
 
   return {

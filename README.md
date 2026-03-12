@@ -453,6 +453,17 @@ Fix:
 - set `responseType` to `02` or `01`
 - leave `responseType` unset or use `12` when you want structured output
 
+### Upstream request timed out
+
+Symptom:
+
+- `Corporate Number API request timed out after 15000 ms`
+
+Fix:
+
+- retry the request after confirming network connectivity
+- reduce the request scope when possible, for example by narrowing date ranges or filters
+
 ## Contributing
 
 Public contributions are welcome. Please open a pull request instead of pushing directly to
