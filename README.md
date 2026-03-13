@@ -180,7 +180,7 @@ mcpServers:
     "houjin-bangou-api": {
       "command": "node",
       "args": [
-        "C:\\Users\\owner\\OneDrive\\Desktop\\my_project\\houjin-bangou-api-mcp\\dist\\server.js"
+        "C:\\Users\\YOUR_USERNAME\\path\\to\\houjin-bangou-api-mcp\\dist\\server.js"
       ],
       "env": {
         "HOUJIN_BANGOU_API_APPLICATION_ID": "YOUR_APPLICATION_ID"
