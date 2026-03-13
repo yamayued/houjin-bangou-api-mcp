@@ -12,6 +12,7 @@ type ManualCompanyCheck = {
 
 const README_PATH = new URL("../README.md", import.meta.url);
 const PACKAGE_JSON_PATH = new URL("../package.json", import.meta.url);
+const CI_WORKFLOW_PATH = new URL("../.github/workflows/ci.yml", import.meta.url);
 const MANUAL_FIXTURE_PATH = new URL("../scripts/manual-company-check.json", import.meta.url);
 const NATIONAL_TAX_AGENCY_NAME = "\u56fd\u7a0e\u5e81";
 const NINTENDO_NAME = "\u4efb\u5929\u5802\u682a\u5f0f\u4f1a\u793e";
@@ -41,6 +42,8 @@ test("README documents first-time setup, verification, package imports, and read
   assert.ok(readme.includes("## Structured Response Fields"));
   assert.ok(readme.includes("## Pagination"));
   assert.ok(readme.includes("Windows installs work even when the repository path contains non-ASCII characters"));
+  assert.ok(readme.includes("C:\\\\Users\\\\YOUR_USERNAME\\\\path\\\\to\\\\houjin-bangou-api-mcp\\\\dist\\\\server.js"));
+  assert.ok(!readme.includes("C:\\\\Users\\\\owner\\\\OneDrive\\\\Desktop\\\\my_project\\\\houjin-bangou-api-mcp\\\\dist\\\\server.js"));
   assert.ok(!readme.includes('"lastUpdateDate": "2026-03-11"'));
 });
 
@@ -61,6 +64,15 @@ test("package.json exposes the sequential live verification script and side-effe
   assert.ok(packageJson.exports?.["./nta-api"]);
   assert.ok(packageJson.exports?.["./xml"]);
   assert.ok(packageJson.exports?.["./types"]);
+});
+
+test("CI workflow uses the Node 24-compatible GitHub Actions releases", () => {
+  const ciWorkflow = readFileSync(CI_WORKFLOW_PATH, "utf8");
+
+  assert.ok(ciWorkflow.includes("actions/checkout@v5"));
+  assert.ok(ciWorkflow.includes("actions/setup-node@v5"));
+  assert.ok(!ciWorkflow.includes("actions/checkout@v4"));
+  assert.ok(!ciWorkflow.includes("actions/setup-node@v4"));
 });
 
 test("manual company fixture uses readable company names", () => {
