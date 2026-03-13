@@ -48,6 +48,10 @@ test("package.json exposes the sequential live verification script and side-effe
   };
 
   assert.equal(packageJson.scripts?.["verify:live"], "tsx scripts/verify-live.ts");
+  assert.equal(
+    packageJson.scripts?.test,
+    "node --import tsx --test test/docs-and-fixtures.test.ts test/nta-api-errors.test.ts test/nta-api.test.ts test/server.test.ts test/startup.test.ts test/verification-helpers.test.ts test/xml-fixtures.test.ts",
+  );
   assert.equal(packageJson.main, "dist/index.js");
   assert.ok(packageJson.exports?.["."]);
   assert.ok(packageJson.exports?.["./nta-api"]);

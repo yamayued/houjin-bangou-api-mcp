@@ -45,7 +45,7 @@
     "smoke:mcp": "npm run build && tsx scripts/smoke-mcp.ts",
     "smoke:package": "npm run build && tsx scripts/package-smoke.ts",
     "start": "node dist/server.js",
-    "test": "tsx --test test/**/*.test.ts",
+    "test": "node --import tsx --test test/docs-and-fixtures.test.ts test/nta-api-errors.test.ts test/nta-api.test.ts test/server.test.ts test/startup.test.ts test/verification-helpers.test.ts test/xml-fixtures.test.ts",
     "verify:live": "tsx scripts/verify-live.ts"
   },
   "repository": {
